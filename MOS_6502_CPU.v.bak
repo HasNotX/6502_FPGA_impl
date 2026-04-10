@@ -1,0 +1,89 @@
+module MOS_6502_CPU (
+    input        clk,
+    input        reset,
+    inout  [7:0] data_bus,
+    output reg [15:0] address_bus,
+    output       read_write_n
+);
+
+// ── Internal wires from FSM ──────────────────────────────────────────
+wire [15:0] PC;
+wire [7:0]  inst_reg;
+wire [7:0]  accum;
+wire [7:0]  X;
+wire [7:0]  Y;
+wire [7:0]  s_pointer;
+wire [2:0]  bus_sel;
+wire [1:0]  addr_sel;
+wire [7:0] s_reg;
+
+// ── Decoder wires ────────────────────────────────────────────────────
+wire [1:0] addr_mode;
+wire [1:0] extra_cycles;
+wire [3:0] alu_op;
+wire [1:0] dest_reg;
+wire       is_store;
+
+// ── Bus logic ────────────────────────────────────────────────────────
+reg  [7:0] data_out;
+reg  [7:0] internal_bus;
+reg  [15:0] operand_addr;
+
+wire [7:0] data_in = data_bus;
+
+// Drive data bus on write, High-Z on read
+assign data_bus = (!read_write_n) ? data_out : 8'bzzzz_zzzz;
+
+// Internal bus mux — controlled by bus_sel from FSM
+always @(*) begin
+    case (bus_sel)
+        3'b000:  internal_bus = accum;
+        3'b001:  internal_bus = X;
+        3'b010:  internal_bus = Y;
+        default: internal_bus = 8'h00;
+    endcase
+end
+
+// ── Address bus mux ──────────────────────────────────────────────────
+localparam ADDR_PC    = 2'd0,
+           ADDR_OP    = 2'd1,
+           ADDR_STACK = 2'd2,
+           ADDR_VEC   = 2'd3;
+
+always @(*) begin
+    case (addr_sel)
+        ADDR_PC:    address_bus = PC;
+        ADDR_OP:    address_bus = operand_addr;
+        ADDR_STACK: address_bus = {8'h01, s_pointer};
+        default:    address_bus = PC;
+    endcase
+end
+
+// ── FSM instantiation ────────────────────────────────────────────────
+cpu_fsm fsm_inst (
+    .clk         (clk),
+    .reset       (reset),
+    .data_in     (data_in),
+    .PC          (PC),
+    .inst_reg    (inst_reg),
+    .accum       (accum),
+    .X           (X),
+    .Y           (Y),
+    .s_pointer   (s_pointer),
+    .bus_sel     (bus_sel),
+    .read_write_n(read_write_n),
+    .addr_sel    (addr_sel)
+	 .s_reg       (s_reg),
+);
+
+// ── Decoder instantiation ────────────────────────────────────────────
+cpu_decoder decoder_inst (
+    .inst_reg    (inst_reg),
+    .addr_mode   (addr_mode),
+    .extra_cycles(extra_cycles),
+    .alu_op      (alu_op),
+    .dest_reg    (dest_reg),
+    .is_store    (is_store)
+);
+
+endmodule

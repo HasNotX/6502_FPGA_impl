@@ -1,0 +1,123 @@
+m255
+K4
+z2
+!s11f vlog 2020.1 2020.02, Feb 28 2020
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/Hasnat_04/Desktop/6502_FPGA_impl
+vcpu_decoder
+Z1 !s110 1775815826
+!i10b 1
+!s100 G@PBaGmPce8:EKIW5jCLK1
+Z2 !s11b Dg1SIo80bB@j0V0VzS_@n1
+IoQ;6DA`kZXaXjYA>e`9g53
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1775815779
+8cpu_decoder.v
+Fcpu_decoder.v
+!i122 24
+L0 1 121
+Z4 OV;L;2020.1;71
+r1
+!s85 0
+31
+Z5 !s108 1775815826.000000
+!s107 MOS_6502_CPU_tb.v|cpu_fsm.v|cpu_decoder.v|MOS_6502_CPU.v|ram.v|
+Z6 !s90 -reportprogress|300|ram.v|MOS_6502_CPU.v|cpu_decoder.v|cpu_fsm.v|MOS_6502_CPU_tb.v|
+!i113 1
+Z7 tCvgOpt 0
+vcpu_fsm
+R1
+!i10b 1
+!s100 IK4>k7BhZW:Ho9IPUZDFC2
+R2
+In2dRWA1nReXhEIXSQ<<nP3
+R3
+R0
+w1775815684
+8cpu_fsm.v
+Fcpu_fsm.v
+!i122 24
+L0 1 220
+R4
+r1
+!s85 0
+31
+R5
+Z8 !s107 MOS_6502_CPU_tb.v|cpu_fsm.v|cpu_decoder.v|MOS_6502_CPU.v|ram.v|
+R6
+!i113 1
+R7
+vMOS_6502_CPU
+R1
+!i10b 1
+!s100 miMOOWel?h2gRiNJEOmUe0
+R2
+IAR4im`o0VV54B6<B^0FL^3
+R3
+R0
+w1775815410
+8MOS_6502_CPU.v
+FMOS_6502_CPU.v
+!i122 24
+L0 1 123
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
+n@m@o@s_6502_@c@p@u
+vMOS_6502_CPU_tb
+R1
+!i10b 1
+!s100 gSL?HoPHn=;LYBJ5]<X243
+R2
+IFY4SZn0Ih^kY9_0:]?P:;0
+R3
+R0
+w1775814500
+8MOS_6502_CPU_tb.v
+FMOS_6502_CPU_tb.v
+!i122 24
+L0 2 44
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
+n@m@o@s_6502_@c@p@u_tb
+vram
+R1
+!i10b 1
+!s100 58O=cM`STZ7X4UF1We5J82
+R2
+ImUG3VmaiDeznZj:IPVeJ12
+R3
+R0
+w1775812119
+8ram.v
+Fram.v
+!i122 24
+L0 1 22
+R4
+r1
+!s85 0
+31
+R5
+R8
+R6
+!i113 1
+R7
