@@ -1,0 +1,22 @@
+module ram (
+    input        clock,
+    input        wren,
+    input [15:0] address,
+    input  [7:0] data,
+    output reg [7:0] q
+);
+
+reg [7:0] mem [0:65535];
+
+initial begin
+    $readmemh("program.hex", mem);
+end
+
+always @(posedge clock) begin
+    if (wren)
+        mem[address] <= data;
+    else
+        q <= mem[address];
+end
+
+endmodule

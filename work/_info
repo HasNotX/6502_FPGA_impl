@@ -10,114 +10,119 @@ z2
 cModel Technology
 Z0 dC:/Users/Hasnat_04/Desktop/6502_FPGA_impl
 vcpu_decoder
-Z1 !s110 1775815826
+Z1 !s110 1775936389
 !i10b 1
-!s100 G@PBaGmPce8:EKIW5jCLK1
+!s100 i[0;17n@zFXcT2O14P9d01
 Z2 !s11b Dg1SIo80bB@j0V0VzS_@n1
-IoQ;6DA`kZXaXjYA>e`9g53
+IgQhj:f^zMOXIEXUbcZG_>0
 Z3 VDg1SIo80bB@j0V0VzS_@n1
 R0
-w1775815779
-8cpu_decoder.v
-Fcpu_decoder.v
-!i122 24
-L0 1 121
+w1775936010
+8C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/cpu_decoder.v
+FC:/Users/Hasnat_04/Desktop/6502_FPGA_impl/cpu_decoder.v
+!i122 49
+L0 1 148
 Z4 OV;L;2020.1;71
 r1
 !s85 0
 31
-Z5 !s108 1775815826.000000
-!s107 MOS_6502_CPU_tb.v|cpu_fsm.v|cpu_decoder.v|MOS_6502_CPU.v|ram.v|
-Z6 !s90 -reportprogress|300|ram.v|MOS_6502_CPU.v|cpu_decoder.v|cpu_fsm.v|MOS_6502_CPU_tb.v|
+Z5 !s108 1775936389.000000
+!s107 C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/cpu_decoder.v|
+!s90 -reportprogress|300|-work|work|C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/cpu_decoder.v|
 !i113 1
+Z6 o-work work
 Z7 tCvgOpt 0
 vcpu_fsm
 R1
 !i10b 1
-!s100 IK4>k7BhZW:Ho9IPUZDFC2
+!s100 ic_zA>UFIFCS=FW1PnDMh3
 R2
-In2dRWA1nReXhEIXSQ<<nP3
+I@i7ThMOUOfRhUcIM3Fi?P1
 R3
 R0
-w1775815684
-8cpu_fsm.v
-Fcpu_fsm.v
-!i122 24
-L0 1 220
+w1775934651
+8C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/cpu_fsm.v
+FC:/Users/Hasnat_04/Desktop/6502_FPGA_impl/cpu_fsm.v
+!i122 50
+L0 1 302
 R4
 r1
 !s85 0
 31
 R5
-Z8 !s107 MOS_6502_CPU_tb.v|cpu_fsm.v|cpu_decoder.v|MOS_6502_CPU.v|ram.v|
-R6
+!s107 C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/cpu_fsm.v|
+!s90 -reportprogress|300|-work|work|C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/cpu_fsm.v|
 !i113 1
+R6
 R7
 vMOS_6502_CPU
-R1
+Z8 !s110 1775936390
 !i10b 1
-!s100 miMOOWel?h2gRiNJEOmUe0
+!s100 DdN;gBa1Th8RQEU=bScPJ0
 R2
-IAR4im`o0VV54B6<B^0FL^3
+ICcCacj19Y@Mc07i>5nKQQ1
 R3
 R0
-w1775815410
-8MOS_6502_CPU.v
-FMOS_6502_CPU.v
-!i122 24
-L0 1 123
+w1775936380
+8C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/MOS_6502_CPU.v
+FC:/Users/Hasnat_04/Desktop/6502_FPGA_impl/MOS_6502_CPU.v
+!i122 51
+L0 1 144
 R4
 r1
 !s85 0
 31
-R5
-R8
-R6
+Z9 !s108 1775936390.000000
+!s107 C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/MOS_6502_CPU.v|
+!s90 -reportprogress|300|-work|work|C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/MOS_6502_CPU.v|
 !i113 1
+R6
 R7
 n@m@o@s_6502_@c@p@u
 vMOS_6502_CPU_tb
-R1
+R8
 !i10b 1
-!s100 gSL?HoPHn=;LYBJ5]<X243
+!s100 GnFYINNa;^^NbXNMUH7C13
 R2
-IFY4SZn0Ih^kY9_0:]?P:;0
+IX4_5Fze]DCAY=Jn?N5oDz2
 R3
 R0
-w1775814500
-8MOS_6502_CPU_tb.v
-FMOS_6502_CPU_tb.v
-!i122 24
+w1775935126
+8C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/MOS_6502_CPU_tb.v
+FC:/Users/Hasnat_04/Desktop/6502_FPGA_impl/MOS_6502_CPU_tb.v
+!i122 52
 L0 2 44
 R4
 r1
 !s85 0
 31
-R5
-R8
-R6
+R9
+!s107 C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/MOS_6502_CPU_tb.v|
+!s90 -reportprogress|300|-work|work|C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/MOS_6502_CPU_tb.v|
 !i113 1
+R6
 R7
 n@m@o@s_6502_@c@p@u_tb
 vram
-R1
+R8
 !i10b 1
-!s100 58O=cM`STZ7X4UF1We5J82
+!s100 n`XEe16SFMzL>RY>U4Q<V0
 R2
-ImUG3VmaiDeznZj:IPVeJ12
+Ia2a7aJ6h7EaCHb:[eInnl0
 R3
 R0
-w1775812119
-8ram.v
-Fram.v
-!i122 24
-L0 1 22
+w1775935847
+8C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/ram.v
+FC:/Users/Hasnat_04/Desktop/6502_FPGA_impl/ram.v
+!i122 53
+L0 1 31
 R4
 r1
 !s85 0
 31
-R5
-R8
-R6
+R9
+!s107 C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/ram.v|
+!s90 -reportprogress|300|-work|work|C:/Users/Hasnat_04/Desktop/6502_FPGA_impl/ram.v|
 !i113 1
+R6
 R7

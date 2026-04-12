@@ -14,19 +14,21 @@ wire [7:0]  X;
 wire [7:0]  Y;
 wire [7:0]  s_pointer;
 wire [2:0]  bus_sel;
-wire [1:0]  addr_sel;
+wire [2:0]  addr_sel;
 wire [7:0]  s_reg;
 wire [7:0]  operand_lo;
 wire [7:0]  operand_hi;
 
 // ── Decoder wires ─────────────────────────────────────────────
-wire [2:0]  addr_mode;
+wire [3:0]  addr_mode;
 wire [1:0]  extra_cycles;
 wire [3:0]  alu_op;
 wire [1:0]  dest_reg;
 wire        is_store;
 wire [15:0] effective_addr;
 wire        addr_ready;
+wire [7:0]  ptr_lo;
+wire [7:0]  ptr_hi;
 
 // ── RAM wire ──────────────────────────────────────────────────
 wire [7:0]  mem_q;
@@ -49,20 +51,32 @@ always @(*) begin
     endcase
 end
 
+// operand address with index register offset
 always @(*) begin
     case (addr_mode)
-        3'd4:    operand_addr = effective_addr + {8'h00, X};   // ZEROPAGE_X
-        3'd5:    operand_addr = effective_addr + {8'h00, X};   // ABSOLUTE_X
-        3'd6:    operand_addr = effective_addr + {8'h00, Y};   // ABSOLUTE_Y
+        4'd4:    operand_addr = effective_addr + {8'h00, X};   // ZEROPAGE_X
+        4'd5:    operand_addr = effective_addr + {8'h00, X};   // ABSOLUTE_X
+        4'd6:    operand_addr = effective_addr + {8'h00, Y};   // ABSOLUTE_Y
+        4'd7:    operand_addr = {8'h00, operand_lo + X};
         default: operand_addr = effective_addr;
     endcase
 end
 
+reg  [15:0] saved_ptr_addr;
+
+// Capture pointer address while it's stable during S_PTR_LO_WAIT
+always @(posedge clk) begin
+    if (fsm_inst.state == 4'd10)   // S_PTR_LO_WAIT — address bus = ADDR_OP = ptr base
+        saved_ptr_addr <= operand_addr;
+end
+
+
 // ── Address bus mux ───────────────────────────────────────────
-localparam ADDR_PC    = 2'd0,
-           ADDR_OP    = 2'd1,
-           ADDR_STACK = 2'd2,
-           ADDR_VEC   = 2'd3;
+localparam ADDR_PC    = 3'd0,
+           ADDR_OP    = 3'd1,
+           ADDR_STACK = 3'd2,
+           ADDR_VEC   = 3'd3,
+           ADDR_PTR   = 3'd4;
 
 always @(*) begin
     case (addr_sel)
@@ -70,6 +84,13 @@ always @(*) begin
         ADDR_OP:    address_bus = operand_addr;
         ADDR_STACK: address_bus = {8'h01, s_pointer};
         ADDR_VEC:   address_bus = 16'hFFFC;
+        ADDR_PTR: begin
+				 if (fsm_inst.state == 4'd11 || fsm_inst.state == 4'd12)
+					  address_bus = {8'h00, saved_ptr_addr[7:0] + 8'h01};  // zero-page wrap
+				 else
+					  address_bus = {ptr_hi, ptr_lo} +
+										 (addr_mode == 4'd8 ? {8'h00, Y} : 16'h0000);
+		end
         default:    address_bus = PC;
     endcase
 end
@@ -94,7 +115,9 @@ cpu_fsm fsm_inst (
     .addr_sel        (addr_sel),
     .s_reg           (s_reg),
     .operand_lo      (operand_lo),
-    .operand_hi      (operand_hi)
+    .operand_hi      (operand_hi),
+    .ptr_lo          (ptr_lo),
+    .ptr_hi          (ptr_hi)
 );
 
 // ── Decoder instantiation ─────────────────────────────────────
