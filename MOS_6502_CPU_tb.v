@@ -30,7 +30,7 @@ initial begin
     @(posedge clk);
     @(negedge clk);
     reset = 0;
-    repeat(60) @(posedge clk);
+repeat(100) @(posedge clk);
     $stop;
 end
 
