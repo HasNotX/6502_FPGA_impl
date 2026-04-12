@@ -1,0 +1,21 @@
+/6502_FPGA_impl
+├── cpu/                        <-- (Hasnat)
+│   ├── cpu_fsm.v		 <-- (Main FSM for CPU)
+│   ├── cpu_decoder.v		 <-- (Instruction decoder)
+│   └── MOS_6502_CPU.v		 <-- (Main CPU core)
+│
+├── video_subsystem/            <-- (Hassaan)
+│   ├── vga/
+│   │   └── nes_vga_core.v      <-- (The timing generator and pixel coordinate mapper)
+│   ├── ppu/
+│   │   ├── ppu_core.v          <-- (The main Ricoh 2C02 state machine)
+│   │   ├── ppu_bg_render.v     <-- (Fetches background tiles (Nametables) from Cartridge)
+│   │   └── ppu_sprite_eval.v   <-- (Scans Object Attribute Memory (OAM) for sprites)
+│   ├── memory/
+│   │   ├── vram.v              <-- (2KB internal PPU RAM for background layouts)
+│   │   └── palette_ram.v       <-- (32-byte internal color palette)
+│   └── include/
+│       └── ppu_memory_map.vh   <-- (Shared constants for PPU addresses (e.g., PPUCTRL 0x2000))
+│
+└── top/                        <-- (Can be used for unified or isolated top modules)
+    └── nes_top_level.v         <-- (Where CPU and Video Subsystem instantiate and connect)
