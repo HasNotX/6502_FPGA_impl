@@ -18,9 +18,9 @@ module nes_clock_generator (
     reg [31:0] ppu_acc;
 
     // Fractional increments calculated for 25.175 MHz base
-    localparam CPU_INC = 32'd305335403; // Generates ~1.789773 MHz
-    localparam PPU_INC = 32'd916006211; // Generates ~5.369318 MHz
-
+    localparam CPU_INC = 32'd305343257; // Generates ~1.789773 MHz
+    localparam PPU_INC = 32'd916029601; // Generates ~5.369318 MHz
+    
     always @(posedge clk_25mhz or posedge reset) begin
         if (reset) begin
             cpu_acc <= 32'd0;
