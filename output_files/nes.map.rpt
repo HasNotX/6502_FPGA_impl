@@ -1,5 +1,5 @@
 Analysis & Synthesis report for nes
-Fri Apr 17 17:54:09 2026
+Fri Apr 17 19:09:19 2026
 Quartus Prime Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
 
 
@@ -56,7 +56,7 @@ on the Quartus Prime software download page.
 +-----------------------------------------------------------------------------------+
 ; Analysis & Synthesis Summary                                                      ;
 +---------------------------------+-------------------------------------------------+
-; Analysis & Synthesis Status     ; Successful - Fri Apr 17 17:54:09 2026           ;
+; Analysis & Synthesis Status     ; Successful - Fri Apr 17 19:09:19 2026           ;
 ; Quartus Prime Version           ; 25.1std.0 Build 1129 10/21/2025 SC Lite Edition ;
 ; Revision Name                   ; nes                                             ;
 ; Top-level Entity Name           ; assignment_top                                  ;
@@ -798,7 +798,7 @@ Note: In order to hide this table in the UI and the text report file, please set
 Info: *******************************************************************
 Info: Running Quartus Prime Analysis & Synthesis
     Info: Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
-    Info: Processing started: Fri Apr 17 17:54:02 2026
+    Info: Processing started: Fri Apr 17 19:09:12 2026
 Info: Command: quartus_map --read_settings_files=on --write_settings_files=off nes -c nes
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
 Info (20030): Parallel compilation is enabled and will use 4 of the 4 processors detected
@@ -1028,9 +1028,9 @@ Info (21057): Implemented 571 device resources after synthesis - the final resou
     Info (21065): Implemented 1 PLLs
 Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 61 warnings
     Info: Peak virtual memory: 500 megabytes
-    Info: Processing ended: Fri Apr 17 17:54:09 2026
+    Info: Processing ended: Fri Apr 17 19:09:19 2026
     Info: Elapsed time: 00:00:07
-    Info: Total CPU time (on all processors): 00:00:16
+    Info: Total CPU time (on all processors): 00:00:17
 
 
 +------------------------------------------+
