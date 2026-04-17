@@ -1,18 +1,18 @@
 module bresenham_fsm (
     input  wire        clk,
     input  wire        reset,
-    input  wire        draw_req,
-    input  wire [7:0]  cx_in,         // NEW: Dynamic X center
-    input  wire [6:0]  cy_in,         // NEW: Dynamic Y center
-    input  wire [5:0]  radius_in,     
-    input  wire [2:0]  color_in,      
+    input  wire        draw_req,      // KEY[0]
+    input  wire [5:0]  radius_in,     // User defined radius
+    input  wire [2:0]  color_in,      // User defined color
     
     output wire [14:0] ram_addr,
     output wire [2:0]  ram_data,
-    output wire        ram_wren,
-    output wire [3:0]  fsm_state_out
+    output wire        ram_wren
 );
 
+    // =========================================================================
+    // Control State Machine
+    // =========================================================================
     localparam S_CLEAR_INIT = 4'd0,
                S_CLEAR_LOOP = 4'd1,
                S_IDLE       = 4'd2,
@@ -29,15 +29,15 @@ module bresenham_fsm (
 
     reg [3:0] current_state;
     reg [3:0] next_state;
-    
-    assign fsm_state_out = current_state;
 
+    // Control Signals to Datapath
     reg dp_clear_req;
     reg dp_init_req;
     reg dp_update_req;
     reg [2:0] dp_octant_sel;
     reg dp_wren;
 
+    // Status Signals from Datapath
     wire dp_clear_done;
     wire dp_draw_done;
 
@@ -49,6 +49,7 @@ module bresenham_fsm (
     end
 
     always @(*) begin
+        // Default control signals
         next_state    = current_state;
         dp_clear_req  = 1'b0;
         dp_init_req   = 1'b0;
@@ -101,16 +102,21 @@ module bresenham_fsm (
         endcase
     end
 
+    // =========================================================================
+    // Datapath
+    // =========================================================================
     reg signed [15:0] x, y, d;
     reg [7:0] cx, cy;
     reg [2:0] current_color;
     
+    // Screen clearing counters
     reg [7:0] clear_x;
     reg [6:0] clear_y;
     
     assign dp_clear_done = (clear_x == 8'd159) && (clear_y == 7'd119);
     assign dp_draw_done  = (x > y);
 
+    // RAM output multiplexer
     reg [7:0] plot_x;
     reg [6:0] plot_y;
     
@@ -136,6 +142,7 @@ module bresenham_fsm (
     assign ram_data = (current_state == S_CLEAR_LOOP) ? 3'b000 : current_color;
     assign ram_wren = dp_wren;
 
+    // Synchronous Datapath Registers
     always @(posedge clk) begin
         if (dp_clear_req) begin
             clear_x <= 8'd0;
@@ -150,16 +157,17 @@ module bresenham_fsm (
         end
 
         if (dp_init_req) begin
-            cx <= cx_in; // Dynamically latch X
-            cy <= cy_in; // Dynamically latch Y
-            x  <= 16'sd0;
+            cx <= 8'd80;
+            cy <= 7'd60;
+            x  <= 16'd0;
             
+            // Clip radius to 59 to prevent screen overflow
             if (radius_in > 6'd59) begin
-                y <= 16'sd59;
-                d <= 3 - (2 * 59);
+                y <= 16'd59;
+                d <= 16'd3 - (16'd2 * 16'd59);
             end else begin
-                y <= {10'b0, radius_in}; 
-                d <= 3 - (2 * {10'b0, radius_in});
+                y <= {10'd0, radius_in};
+                d <= 16'd3 - (16'd2 * {10'd0, radius_in});
             end
             
             current_color <= color_in;
@@ -167,12 +175,12 @@ module bresenham_fsm (
 
         if (dp_update_req) begin
             if (d < 0) begin
-                d <= d + (4 * x) + 6;
+                d <= d + (16'd4 * x) + 16'd6;
             end else begin
-                d <= d + (4 * (x - y)) + 10;
-                y <= y - 1;
+                d <= d + (16'd4 * (x - y)) + 16'd10;
+                y <= y - 16'd1;
             end
-            x <= x + 1;
+            x <= x + 16'd1;
         end
     end
 
