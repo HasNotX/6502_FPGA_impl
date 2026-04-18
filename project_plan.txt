@@ -2,6 +2,7 @@
 ├── cpu/                        <-- (Hasnat)
 │   ├── cpu_fsm.v		 <-- (Main FSM for CPU)
 │   ├── cpu_decoder.v		 <-- (Instruction decoder)
+|   ├── ram.v                <-- (Stores hardcoded debugging instructions for now)
 │   └── MOS_6502_CPU.v		 <-- (Main CPU core)
 │
 ├── video_subsystem/            <-- (Hassaan)
