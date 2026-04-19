@@ -12,12 +12,13 @@ module cpu_fsm (
     output reg [2:0] addr_sel,
     output reg [7:0] ptr_lo, ptr_hi,
     output reg write_en,
-    output reg [7:0] push_data
+    output reg [7:0] push_data,
+	 output reg [5:0] state
 );
 
 reg [7:0] res;
 
-reg [5:0] state;
+
 localparam S_FETCH             = 6'd0,
            S_FETCH_WAIT        = 6'd7,
            S_FETCH2            = 6'd1,

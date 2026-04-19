@@ -1,13 +1,13 @@
-Analysis & Synthesis Status : Successful - Fri Apr 17 19:09:19 2026
+Analysis & Synthesis Status : Successful - Mon Apr 20 00:21:08 2026
 Quartus Prime Version : 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
 Revision Name : nes
-Top-level Entity Name : assignment_top
+Top-level Entity Name : nes_top
 Family : Cyclone V
 Logic utilization (in ALMs) : N/A
-Total registers : 186
+Total registers : 148
 Total pins : 96
 Total virtual pins : 0
-Total block memory bits : 57,600
+Total block memory bits : 524,288
 Total DSP Blocks : 0
 Total HSSI RX PCSs : 0
 Total HSSI PMA RX Deserializers : 0

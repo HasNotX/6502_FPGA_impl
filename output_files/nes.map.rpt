@@ -1,5 +1,5 @@
 Analysis & Synthesis report for nes
-Fri Apr 17 19:09:19 2026
+Mon Apr 20 00:21:08 2026
 Quartus Prime Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
 
 
@@ -15,21 +15,26 @@ Quartus Prime Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
   7. Analysis & Synthesis Resource Utilization by Entity
   8. Analysis & Synthesis RAM Summary
   9. Analysis & Synthesis IP Cores Summary
- 10. State Machine - |assignment_top|bresenham_fsm:fsm_inst|current_state
- 11. Registers Removed During Synthesis
+ 10. Registers Removed During Synthesis
+ 11. Removed Registers Triggering Further Register Optimizations
  12. General Register Statistics
- 13. Inverted Register Statistics
- 14. Registers Packed Into Inferred Megafunctions
- 15. Multiplexer Restructuring Statistics (Restructuring Performed)
- 16. Source assignments for framebuffer_ram:fb_ram|altsyncram:ram_rtl_0|altsyncram_acn1:auto_generated
- 17. Parameter Settings for User Entity Instance: vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i
- 18. Parameter Settings for Inferred Entity Instance: framebuffer_ram:fb_ram|altsyncram:ram_rtl_0
- 19. altsyncram Parameter Settings by Entity Instance
- 20. Port Connectivity Checks: "vga_sync_generator:sync_gen"
- 21. Post-Synthesis Netlist Statistics for Top Partition
- 22. Elapsed Time Per Partition
- 23. Analysis & Synthesis Messages
- 24. Analysis & Synthesis Suppressed Messages
+ 13. Registers Packed Into Inferred Megafunctions
+ 14. Multiplexer Restructuring Statistics (Restructuring Performed)
+ 15. Source assignments for ram:system_ram|altsyncram:mem_rtl_0|altsyncram_jde1:auto_generated
+ 16. Parameter Settings for User Entity Instance: vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i
+ 17. Parameter Settings for Inferred Entity Instance: ram:system_ram|altsyncram:mem_rtl_0
+ 18. altsyncram Parameter Settings by Entity Instance
+ 19. Port Connectivity Checks: "ppu_core:ppu_inst|oam_ram:sprite_ram"
+ 20. Port Connectivity Checks: "ppu_core:ppu_inst|palette_ram:pal_ram"
+ 21. Port Connectivity Checks: "ppu_core:ppu_inst|vram_2k:nametable_ram"
+ 22. Port Connectivity Checks: "ppu_core:ppu_inst|ppu_registers:regs_inst"
+ 23. Port Connectivity Checks: "ppu_core:ppu_inst"
+ 24. Port Connectivity Checks: "MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst"
+ 25. Port Connectivity Checks: "nes_clock_generator:clk_gen"
+ 26. Post-Synthesis Netlist Statistics for Top Partition
+ 27. Elapsed Time Per Partition
+ 28. Analysis & Synthesis Messages
+ 29. Analysis & Synthesis Suppressed Messages
 
 
 
@@ -56,16 +61,16 @@ on the Quartus Prime software download page.
 +-----------------------------------------------------------------------------------+
 ; Analysis & Synthesis Summary                                                      ;
 +---------------------------------+-------------------------------------------------+
-; Analysis & Synthesis Status     ; Successful - Fri Apr 17 19:09:19 2026           ;
+; Analysis & Synthesis Status     ; Successful - Mon Apr 20 00:21:08 2026           ;
 ; Quartus Prime Version           ; 25.1std.0 Build 1129 10/21/2025 SC Lite Edition ;
 ; Revision Name                   ; nes                                             ;
-; Top-level Entity Name           ; assignment_top                                  ;
+; Top-level Entity Name           ; nes_top                                         ;
 ; Family                          ; Cyclone V                                       ;
 ; Logic utilization (in ALMs)     ; N/A                                             ;
-; Total registers                 ; 186                                             ;
+; Total registers                 ; 148                                             ;
 ; Total pins                      ; 96                                              ;
 ; Total virtual pins              ; 0                                               ;
-; Total block memory bits         ; 57,600                                          ;
+; Total block memory bits         ; 524,288                                         ;
 ; Total DSP Blocks                ; 0                                               ;
 ; Total HSSI RX PCSs              ; 0                                               ;
 ; Total HSSI PMA RX Deserializers ; 0                                               ;
@@ -82,7 +87,7 @@ on the Quartus Prime software download page.
 ; Option                                                                          ; Setting            ; Default Value      ;
 +---------------------------------------------------------------------------------+--------------------+--------------------+
 ; Device                                                                          ; 5CSXFC6D6F31C6     ;                    ;
-; Top-level entity name                                                           ; assignment_top     ; nes                ;
+; Top-level entity name                                                           ; nes_top            ; nes                ;
 ; Family name                                                                     ; Cyclone V          ; Cyclone V          ;
 ; Use smart compilation                                                           ; Off                ; Off                ;
 ; Enable parallel Assembler and Timing Analyzer during compilation                ; On                 ; On                 ;
@@ -176,37 +181,42 @@ on the Quartus Prime software download page.
 ;                            ;             ;
 ; Usage by Processor         ; % Time Used ;
 ;     Processor 1            ; 100.0%      ;
-;     Processor 2            ;   0.0%      ;
-;     Processors 3-4         ;   0.0%      ;
+;     Processor 2            ;   0.1%      ;
+;     Processor 3            ;   0.0%      ;
+;     Processor 4            ;   0.0%      ;
 +----------------------------+-------------+
 
 
-+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-; Analysis & Synthesis Source Files Read                                                                                                                                                        ;
-+------------------------------------------+-----------------+------------------------------+-----------------------------------------------------------------------------------------+---------+
-; File Name with User-Entered Path         ; Used in Netlist ; File Type                    ; File Name with Absolute Path                                                            ; Library ;
-+------------------------------------------+-----------------+------------------------------+-----------------------------------------------------------------------------------------+---------+
-; video_subsystem/challenge_generator.v    ; yes             ; User Verilog HDL File        ; /home/someone/hassaan/nes/video_subsystem/challenge_generator.v                         ;         ;
-; video_subsystem/assignment_top.v         ; yes             ; User Verilog HDL File        ; /home/someone/hassaan/nes/video_subsystem/assignment_top.v                              ;         ;
-; video_subsystem/bresenham_fsm.v          ; yes             ; User Verilog HDL File        ; /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v                               ;         ;
-; video_subsystem/vga/vga_sync_generator.v ; yes             ; User Verilog HDL File        ; /home/someone/hassaan/nes/video_subsystem/vga/vga_sync_generator.v                      ;         ;
-; vga_pll.v                                ; yes             ; User Wizard-Generated File   ; /home/someone/hassaan/nes/vga_pll.v                                                     ; vga_pll ;
-; vga_pll/vga_pll_0002.v                   ; yes             ; User Verilog HDL File        ; /home/someone/hassaan/nes/vga_pll/vga_pll_0002.v                                        ; vga_pll ;
-; output_files/hex_decoder.v               ; yes             ; User Verilog HDL File        ; /home/someone/hassaan/nes/output_files/hex_decoder.v                                    ;         ;
-; altera_pll.v                             ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altera_pll.v          ;         ;
-; altsyncram.tdf                           ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf        ;         ;
-; stratix_ram_block.inc                    ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/stratix_ram_block.inc ;         ;
-; lpm_mux.inc                              ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/lpm_mux.inc           ;         ;
-; lpm_decode.inc                           ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/lpm_decode.inc        ;         ;
-; aglobal251.inc                           ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/aglobal251.inc        ;         ;
-; a_rdenreg.inc                            ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/a_rdenreg.inc         ;         ;
-; altrom.inc                               ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altrom.inc            ;         ;
-; altram.inc                               ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altram.inc            ;         ;
-; altdpram.inc                             ; yes             ; Megafunction                 ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altdpram.inc          ;         ;
-; db/altsyncram_acn1.tdf                   ; yes             ; Auto-Generated Megafunction  ; /home/someone/hassaan/nes/db/altsyncram_acn1.tdf                                        ;         ;
-; db/decode_7la.tdf                        ; yes             ; Auto-Generated Megafunction  ; /home/someone/hassaan/nes/db/decode_7la.tdf                                             ;         ;
-; db/mux_ifb.tdf                           ; yes             ; Auto-Generated Megafunction  ; /home/someone/hassaan/nes/db/mux_ifb.tdf                                                ;         ;
-+------------------------------------------+-----------------+------------------------------+-----------------------------------------------------------------------------------------+---------+
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Source Files Read                                                                                                                                                                         ;
++----------------------------------+-----------------+-------------------------------------------------------+-----------------------------------------------------------------------------------------+---------+
+; File Name with User-Entered Path ; Used in Netlist ; File Type                                             ; File Name with Absolute Path                                                            ; Library ;
++----------------------------------+-----------------+-------------------------------------------------------+-----------------------------------------------------------------------------------------+---------+
+; video_subsystem/ppu/ppu_core.v   ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v                                ;         ;
+; ram.v                            ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/ram.v                                                         ;         ;
+; cpu_decoder.v                    ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/cpu_decoder.v                                                 ;         ;
+; MOS_6502_CPU.v                   ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/MOS_6502_CPU.v                                                ;         ;
+; cpu_fsm.v                        ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/cpu_fsm.v                                                     ;         ;
+; nes_clock_generator.v            ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/nes_clock_generator.v                                         ;         ;
+; nes_top.v                        ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/nes_top.v                                                     ;         ;
+; vga_pll.v                        ; yes             ; User Wizard-Generated File                            ; /home/someone/hassaan/nes/vga_pll.v                                                     ; vga_pll ;
+; vga_pll/vga_pll_0002.v           ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/vga_pll/vga_pll_0002.v                                        ; vga_pll ;
+; altera_pll.v                     ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altera_pll.v          ;         ;
+; altsyncram.tdf                   ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf        ;         ;
+; stratix_ram_block.inc            ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/stratix_ram_block.inc ;         ;
+; lpm_mux.inc                      ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/lpm_mux.inc           ;         ;
+; lpm_decode.inc                   ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/lpm_decode.inc        ;         ;
+; aglobal251.inc                   ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/aglobal251.inc        ;         ;
+; a_rdenreg.inc                    ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/a_rdenreg.inc         ;         ;
+; altrom.inc                       ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altrom.inc            ;         ;
+; altram.inc                       ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altram.inc            ;         ;
+; altdpram.inc                     ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altdpram.inc          ;         ;
+; db/altsyncram_jde1.tdf           ; yes             ; Auto-Generated Megafunction                           ; /home/someone/hassaan/nes/db/altsyncram_jde1.tdf                                        ;         ;
+; db/nes.ram0_ram_1d0cf.hdl.mif    ; yes             ; Auto-Generated Auto-Found Memory Initialization File  ; /home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif                                 ;         ;
+; db/decode_dla.tdf                ; yes             ; Auto-Generated Megafunction                           ; /home/someone/hassaan/nes/db/decode_dla.tdf                                             ;         ;
+; db/decode_61a.tdf                ; yes             ; Auto-Generated Megafunction                           ; /home/someone/hassaan/nes/db/decode_61a.tdf                                             ;         ;
+; db/mux_tfb.tdf                   ; yes             ; Auto-Generated Megafunction                           ; /home/someone/hassaan/nes/db/mux_tfb.tdf                                                ;         ;
++----------------------------------+-----------------+-------------------------------------------------------+-----------------------------------------------------------------------------------------+---------+
 
 
 +---------------------------------------------------------------------------------------------------------------------------------+
@@ -214,20 +224,20 @@ on the Quartus Prime software download page.
 +---------------------------------------------+-----------------------------------------------------------------------------------+
 ; Resource                                    ; Usage                                                                             ;
 +---------------------------------------------+-----------------------------------------------------------------------------------+
-; Estimate of Logic utilization (ALMs needed) ; 239                                                                               ;
+; Estimate of Logic utilization (ALMs needed) ; 683                                                                               ;
 ;                                             ;                                                                                   ;
-; Combinational ALUT usage for logic          ; 434                                                                               ;
-;     -- 7 input functions                    ; 3                                                                                 ;
-;     -- 6 input functions                    ; 38                                                                                ;
-;     -- 5 input functions                    ; 55                                                                                ;
-;     -- 4 input functions                    ; 46                                                                                ;
-;     -- <=3 input functions                  ; 292                                                                               ;
+; Combinational ALUT usage for logic          ; 1050                                                                              ;
+;     -- 7 input functions                    ; 41                                                                                ;
+;     -- 6 input functions                    ; 270                                                                               ;
+;     -- 5 input functions                    ; 248                                                                               ;
+;     -- 4 input functions                    ; 128                                                                               ;
+;     -- <=3 input functions                  ; 363                                                                               ;
 ;                                             ;                                                                                   ;
-; Dedicated logic registers                   ; 186                                                                               ;
+; Dedicated logic registers                   ; 148                                                                               ;
 ;                                             ;                                                                                   ;
 ; I/O pins                                    ; 96                                                                                ;
 ; Total MLAB memory bits                      ; 0                                                                                 ;
-; Total block memory bits                     ; 57600                                                                             ;
+; Total block memory bits                     ; 524288                                                                            ;
 ;                                             ;                                                                                   ;
 ; Total DSP Blocks                            ; 0                                                                                 ;
 ;                                             ;                                                                                   ;
@@ -235,85 +245,73 @@ on the Quartus Prime software download page.
 ;     -- PLLs                                 ; 1                                                                                 ;
 ;                                             ;                                                                                   ;
 ; Maximum fan-out node                        ; vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i|outclk_wire[0] ;
-; Maximum fan-out                             ; 198                                                                               ;
-; Total fan-out                               ; 2495                                                                              ;
-; Average fan-out                             ; 3.04                                                                              ;
+; Maximum fan-out                             ; 214                                                                               ;
+; Total fan-out                               ; 6236                                                                              ;
+; Average fan-out                             ; 4.29                                                                              ;
 +---------------------------------------------+-----------------------------------------------------------------------------------+
 
 
-+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-; Analysis & Synthesis Resource Utilization by Entity                                                                                                                                                                                                                                                     ;
-+-------------------------------------------+---------------------+---------------------------+-------------------+------------+------+--------------+---------------------------------------------------------------------------------------------------------------+---------------------+--------------+
-; Compilation Hierarchy Node                ; Combinational ALUTs ; Dedicated Logic Registers ; Block Memory Bits ; DSP Blocks ; Pins ; Virtual Pins ; Full Hierarchy Name                                                                                           ; Entity Name         ; Library Name ;
-+-------------------------------------------+---------------------+---------------------------+-------------------+------------+------+--------------+---------------------------------------------------------------------------------------------------------------+---------------------+--------------+
-; |assignment_top                           ; 434 (39)            ; 186 (4)                   ; 57600             ; 0          ; 96   ; 0            ; |assignment_top                                                                                               ; assignment_top      ; work         ;
-;    |bresenham_fsm:fsm_inst|               ; 288 (288)           ; 92 (92)                   ; 0                 ; 0          ; 0    ; 0            ; |assignment_top|bresenham_fsm:fsm_inst                                                                        ; bresenham_fsm       ; work         ;
-;    |challenge_generator:gen_inst|         ; 67 (67)             ; 65 (65)                   ; 0                 ; 0          ; 0    ; 0            ; |assignment_top|challenge_generator:gen_inst                                                                  ; challenge_generator ; work         ;
-;    |framebuffer_ram:fb_ram|               ; 3 (0)               ; 2 (0)                     ; 57600             ; 0          ; 0    ; 0            ; |assignment_top|framebuffer_ram:fb_ram                                                                        ; framebuffer_ram     ; work         ;
-;       |altsyncram:ram_rtl_0|              ; 3 (0)               ; 2 (0)                     ; 57600             ; 0          ; 0    ; 0            ; |assignment_top|framebuffer_ram:fb_ram|altsyncram:ram_rtl_0                                                   ; altsyncram          ; work         ;
-;          |altsyncram_acn1:auto_generated| ; 3 (0)               ; 2 (2)                     ; 57600             ; 0          ; 0    ; 0            ; |assignment_top|framebuffer_ram:fb_ram|altsyncram:ram_rtl_0|altsyncram_acn1:auto_generated                    ; altsyncram_acn1     ; work         ;
-;             |decode_7la:decode2|          ; 3 (3)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |assignment_top|framebuffer_ram:fb_ram|altsyncram:ram_rtl_0|altsyncram_acn1:auto_generated|decode_7la:decode2 ; decode_7la          ; work         ;
-;    |hex_decoder:hex0_inst|                ; 7 (7)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |assignment_top|hex_decoder:hex0_inst                                                                         ; hex_decoder         ; work         ;
-;    |vga_pll:pll_inst|                     ; 0 (0)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |assignment_top|vga_pll:pll_inst                                                                              ; vga_pll             ; vga_pll      ;
-;       |vga_pll_0002:vga_pll_inst|         ; 0 (0)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |assignment_top|vga_pll:pll_inst|vga_pll_0002:vga_pll_inst                                                    ; vga_pll_0002        ; vga_pll      ;
-;          |altera_pll:altera_pll_i|        ; 0 (0)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |assignment_top|vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i                            ; altera_pll          ; work         ;
-;    |vga_sync_generator:sync_gen|          ; 30 (30)             ; 23 (23)                   ; 0                 ; 0          ; 0    ; 0            ; |assignment_top|vga_sync_generator:sync_gen                                                                   ; vga_sync_generator  ; work         ;
-+-------------------------------------------+---------------------+---------------------------+-------------------+------------+------+--------------+---------------------------------------------------------------------------------------------------------------+---------------------+--------------+
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Resource Utilization by Entity                                                                                                                                                                                                                                          ;
++-------------------------------------------+---------------------+---------------------------+-------------------+------------+------+--------------+----------------------------------------------------------------------------------------------------+---------------------+--------------+
+; Compilation Hierarchy Node                ; Combinational ALUTs ; Dedicated Logic Registers ; Block Memory Bits ; DSP Blocks ; Pins ; Virtual Pins ; Full Hierarchy Name                                                                                ; Entity Name         ; Library Name ;
++-------------------------------------------+---------------------+---------------------------+-------------------+------------+------+--------------+----------------------------------------------------------------------------------------------------+---------------------+--------------+
+; |nes_top                                  ; 1050 (10)           ; 148 (1)                   ; 524288            ; 0          ; 96   ; 0            ; |nes_top                                                                                           ; nes_top             ; work         ;
+;    |MOS_6502_CPU:cpu_inst|                ; 968 (140)           ; 111 (0)                   ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst                                                                     ; MOS_6502_CPU        ; work         ;
+;       |cpu_decoder:dec_inst|              ; 52 (52)             ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_decoder:dec_inst                                                ; cpu_decoder         ; work         ;
+;       |cpu_fsm:fsm_inst|                  ; 776 (776)           ; 111 (111)                 ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst                                                    ; cpu_fsm             ; work         ;
+;    |nes_clock_generator:clk_gen|          ; 33 (33)             ; 33 (33)                   ; 0                 ; 0          ; 0    ; 0            ; |nes_top|nes_clock_generator:clk_gen                                                               ; nes_clock_generator ; work         ;
+;    |ram:system_ram|                       ; 39 (0)              ; 3 (0)                     ; 524288            ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram                                                                            ; ram                 ; work         ;
+;       |altsyncram:mem_rtl_0|              ; 39 (0)              ; 3 (0)                     ; 524288            ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram|altsyncram:mem_rtl_0                                                       ; altsyncram          ; work         ;
+;          |altsyncram_jde1:auto_generated| ; 39 (0)              ; 3 (3)                     ; 524288            ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram|altsyncram:mem_rtl_0|altsyncram_jde1:auto_generated                        ; altsyncram_jde1     ; work         ;
+;             |decode_61a:rden_decode|      ; 7 (7)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram|altsyncram:mem_rtl_0|altsyncram_jde1:auto_generated|decode_61a:rden_decode ; decode_61a          ; work         ;
+;             |decode_dla:decode3|          ; 8 (8)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram|altsyncram:mem_rtl_0|altsyncram_jde1:auto_generated|decode_dla:decode3     ; decode_dla          ; work         ;
+;             |mux_tfb:mux2|                ; 24 (24)             ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram|altsyncram:mem_rtl_0|altsyncram_jde1:auto_generated|mux_tfb:mux2           ; mux_tfb             ; work         ;
+;    |vga_pll:pll_inst|                     ; 0 (0)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|vga_pll:pll_inst                                                                          ; vga_pll             ; vga_pll      ;
+;       |vga_pll_0002:vga_pll_inst|         ; 0 (0)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|vga_pll:pll_inst|vga_pll_0002:vga_pll_inst                                                ; vga_pll_0002        ; vga_pll      ;
+;          |altera_pll:altera_pll_i|        ; 0 (0)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i                        ; altera_pll          ; work         ;
++-------------------------------------------+---------------------+---------------------------+-------------------+------------+------+--------------+----------------------------------------------------------------------------------------------------+---------------------+--------------+
 Note: For table entries with two numbers listed, the numbers in parentheses indicate the number of resources of the given type used by the specific entity alone. The numbers listed outside of parentheses indicate the total resources of the given type used by the specific entity and all of its sub-entities in the hierarchy.
 
 
-+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-; Analysis & Synthesis RAM Summary                                                                                                                                                           ;
-+---------------------------------------------------------------------------------------+------+------------------+--------------+--------------+--------------+--------------+-------+------+
-; Name                                                                                  ; Type ; Mode             ; Port A Depth ; Port A Width ; Port B Depth ; Port B Width ; Size  ; MIF  ;
-+---------------------------------------------------------------------------------------+------+------------------+--------------+--------------+--------------+--------------+-------+------+
-; framebuffer_ram:fb_ram|altsyncram:ram_rtl_0|altsyncram_acn1:auto_generated|ALTSYNCRAM ; AUTO ; Simple Dual Port ; 19200        ; 3            ; 19200        ; 3            ; 57600 ; None ;
-+---------------------------------------------------------------------------------------+------+------------------+--------------+--------------+--------------+--------------+-------+------+
++---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis RAM Summary                                                                                                                                                                        ;
++-------------------------------------------------------------------------------+------+-------------+--------------+--------------+--------------+--------------+--------+-------------------------------+
+; Name                                                                          ; Type ; Mode        ; Port A Depth ; Port A Width ; Port B Depth ; Port B Width ; Size   ; MIF                           ;
++-------------------------------------------------------------------------------+------+-------------+--------------+--------------+--------------+--------------+--------+-------------------------------+
+; ram:system_ram|altsyncram:mem_rtl_0|altsyncram_jde1:auto_generated|ALTSYNCRAM ; AUTO ; Single Port ; 65536        ; 8            ; --           ; --           ; 524288 ; db/nes.ram0_ram_1d0cf.hdl.mif ;
++-------------------------------------------------------------------------------+------+-------------+--------------+--------------+--------------+--------------+--------+-------------------------------+
 
 
-+--------------------------------------------------------------------------------------------------------------------+
-; Analysis & Synthesis IP Cores Summary                                                                              ;
-+--------+--------------+---------+--------------+--------------+----------------------------------+-----------------+
-; Vendor ; IP Core Name ; Version ; Release Date ; License Type ; Entity Instance                  ; IP Include File ;
-+--------+--------------+---------+--------------+--------------+----------------------------------+-----------------+
-; Altera ; altera_pll   ; 25.1    ; N/A          ; N/A          ; |assignment_top|vga_pll:pll_inst ; vga_pll.v       ;
-+--------+--------------+---------+--------------+--------------+----------------------------------+-----------------+
++-------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis IP Cores Summary                                                                       ;
++--------+--------------+---------+--------------+--------------+---------------------------+-----------------+
+; Vendor ; IP Core Name ; Version ; Release Date ; License Type ; Entity Instance           ; IP Include File ;
++--------+--------------+---------+--------------+--------------+---------------------------+-----------------+
+; Altera ; altera_pll   ; 25.1    ; N/A          ; N/A          ; |nes_top|vga_pll:pll_inst ; vga_pll.v       ;
++--------+--------------+---------+--------------+--------------+---------------------------+-----------------+
 
 
-Encoding Type:  One-Hot
-+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-; State Machine - |assignment_top|bresenham_fsm:fsm_inst|current_state                                                                                                                                                                                                                                                                         ;
-+----------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+----------------------+----------------------------+----------------------------+
-; Name                       ; current_state.S_UPDATE ; current_state.S_DRAW_8 ; current_state.S_DRAW_7 ; current_state.S_DRAW_6 ; current_state.S_DRAW_5 ; current_state.S_DRAW_4 ; current_state.S_DRAW_3 ; current_state.S_DRAW_2 ; current_state.S_DRAW_1 ; current_state.S_IDLE ; current_state.S_CLEAR_LOOP ; current_state.S_CLEAR_INIT ;
-+----------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+----------------------+----------------------------+----------------------------+
-; current_state.S_CLEAR_INIT ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                    ; 0                          ; 0                          ;
-; current_state.S_CLEAR_LOOP ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                    ; 1                          ; 1                          ;
-; current_state.S_IDLE       ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 1                    ; 0                          ; 1                          ;
-; current_state.S_DRAW_1     ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 1                      ; 0                    ; 0                          ; 1                          ;
-; current_state.S_DRAW_2     ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 1                      ; 0                      ; 0                    ; 0                          ; 1                          ;
-; current_state.S_DRAW_3     ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 1                      ; 0                      ; 0                      ; 0                    ; 0                          ; 1                          ;
-; current_state.S_DRAW_4     ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 1                      ; 0                      ; 0                      ; 0                      ; 0                    ; 0                          ; 1                          ;
-; current_state.S_DRAW_5     ; 0                      ; 0                      ; 0                      ; 0                      ; 1                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                    ; 0                          ; 1                          ;
-; current_state.S_DRAW_6     ; 0                      ; 0                      ; 0                      ; 1                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                    ; 0                          ; 1                          ;
-; current_state.S_DRAW_7     ; 0                      ; 0                      ; 1                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                    ; 0                          ; 1                          ;
-; current_state.S_DRAW_8     ; 0                      ; 1                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                    ; 0                          ; 1                          ;
-; current_state.S_UPDATE     ; 1                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                      ; 0                    ; 0                          ; 1                          ;
-+----------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+------------------------+----------------------+----------------------------+----------------------------+
++-------------------------------------------------------------------------------------------------------+
+; Registers Removed During Synthesis                                                                    ;
++--------------------------------------------------------------+----------------------------------------+
+; Register name                                                ; Reason for Removal                     ;
++--------------------------------------------------------------+----------------------------------------+
+; ppu_core:ppu_inst|ppu_registers:regs_inst|cpu_data_out[0..6] ; Stuck at GND due to stuck port data_in ;
+; ppu_core:ppu_inst|ppu_registers:regs_inst|status_reg[7]      ; Stuck at GND due to stuck port data_in ;
+; ppu_core:ppu_inst|ppu_registers:regs_inst|cpu_data_out[7]    ; Stuck at GND due to stuck port data_in ;
+; Total Number of Removed Registers = 9                        ;                                        ;
++--------------------------------------------------------------+----------------------------------------+
 
 
-+---------------------------------------------------------------------------------+
-; Registers Removed During Synthesis                                              ;
-+----------------------------------------+----------------------------------------+
-; Register name                          ; Reason for Removal                     ;
-+----------------------------------------+----------------------------------------+
-; bresenham_fsm:fsm_inst|cy[7]           ; Stuck at GND due to stuck port data_in ;
-; bresenham_fsm:fsm_inst|d[0]            ; Stuck at VCC due to stuck port data_in ;
-; bresenham_fsm:fsm_inst|current_state~4 ; Lost fanout                            ;
-; bresenham_fsm:fsm_inst|current_state~5 ; Lost fanout                            ;
-; bresenham_fsm:fsm_inst|current_state~6 ; Lost fanout                            ;
-; bresenham_fsm:fsm_inst|current_state~7 ; Lost fanout                            ;
-; Total Number of Removed Registers = 6  ;                                        ;
-+----------------------------------------+----------------------------------------+
++-------------------------------------------------------------------------------------------------------------------------------------------------+
+; Removed Registers Triggering Further Register Optimizations                                                                                     ;
++---------------------------------------------------------+---------------------------+-----------------------------------------------------------+
+; Register name                                           ; Reason for Removal        ; Registers Removed due to This Register                    ;
++---------------------------------------------------------+---------------------------+-----------------------------------------------------------+
+; ppu_core:ppu_inst|ppu_registers:regs_inst|status_reg[7] ; Stuck at GND              ; ppu_core:ppu_inst|ppu_registers:regs_inst|cpu_data_out[7] ;
+;                                                         ; due to stuck port data_in ;                                                           ;
++---------------------------------------------------------+---------------------------+-----------------------------------------------------------+
 
 
 +------------------------------------------------------+
@@ -321,79 +319,69 @@ Encoding Type:  One-Hot
 +----------------------------------------------+-------+
 ; Statistic                                    ; Value ;
 +----------------------------------------------+-------+
-; Total registers                              ; 186   ;
-; Number of registers using Synchronous Clear  ; 79    ;
-; Number of registers using Synchronous Load   ; 8     ;
-; Number of registers using Asynchronous Clear ; 100   ;
+; Total registers                              ; 148   ;
+; Number of registers using Synchronous Clear  ; 36    ;
+; Number of registers using Synchronous Load   ; 3     ;
+; Number of registers using Asynchronous Clear ; 33    ;
 ; Number of registers using Asynchronous Load  ; 0     ;
-; Number of registers using Clock Enable       ; 130   ;
+; Number of registers using Clock Enable       ; 106   ;
 ; Number of registers using Preset             ; 0     ;
 +----------------------------------------------+-------+
 
 
-+-----------------------------------------------------+
-; Inverted Register Statistics                        ;
-+-------------------------------------------+---------+
-; Inverted Register                         ; Fan out ;
-+-------------------------------------------+---------+
-; vga_sync_generator:sync_gen|h_sync        ; 1       ;
-; vga_sync_generator:sync_gen|v_sync        ; 1       ;
-; challenge_generator:gen_inst|gen_color[2] ; 1       ;
-; challenge_generator:gen_inst|gen_color[1] ; 1       ;
-; challenge_generator:gen_inst|gen_color[0] ; 1       ;
-; challenge_generator:gen_inst|lfsr[15]     ; 4       ;
-; challenge_generator:gen_inst|lfsr[13]     ; 10      ;
-; challenge_generator:gen_inst|gen_cx[4]    ; 1       ;
-; challenge_generator:gen_inst|lfsr[5]      ; 7       ;
-; challenge_generator:gen_inst|lfsr[7]      ; 7       ;
-; challenge_generator:gen_inst|lfsr[6]      ; 7       ;
-; challenge_generator:gen_inst|lfsr[11]     ; 6       ;
-; challenge_generator:gen_inst|lfsr[10]     ; 4       ;
-; challenge_generator:gen_inst|lfsr[0]      ; 4       ;
-; challenge_generator:gen_inst|gen_cx[6]    ; 1       ;
-; challenge_generator:gen_inst|gen_cy[2]    ; 1       ;
-; challenge_generator:gen_inst|gen_cy[3]    ; 1       ;
-; challenge_generator:gen_inst|gen_cy[4]    ; 1       ;
-; challenge_generator:gen_inst|gen_cy[5]    ; 1       ;
-; Total number of inverted registers = 19   ;         ;
-+-------------------------------------------+---------+
++-----------------------------------------------------------------+
+; Registers Packed Into Inferred Megafunctions                    ;
++-------------------------------+--------------------------+------+
+; Register Name                 ; Megafunction             ; Type ;
++-------------------------------+--------------------------+------+
+; ram:system_ram|data_out[0..7] ; ram:system_ram|mem_rtl_0 ; RAM  ;
++-------------------------------+--------------------------+------+
 
 
-+--------------------------------------------------------------------------+
-; Registers Packed Into Inferred Megafunctions                             ;
-+--------------------------------+----------------------------------+------+
-; Register Name                  ; Megafunction                     ; Type ;
-+--------------------------------+----------------------------------+------+
-; framebuffer_ram:fb_ram|q[0..2] ; framebuffer_ram:fb_ram|ram_rtl_0 ; RAM  ;
-+--------------------------------+----------------------------------+------+
++----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Multiplexer Restructuring Statistics (Restructuring Performed)                                                                                                             ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+--------------------------------------------------------------+
+; Multiplexer Inputs ; Bus Width ; Baseline Area ; Area if Restructured ; Saving if Restructured ; Registered ; Example Multiplexer Output                                   ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+--------------------------------------------------------------+
+; 69:1               ; 8 bits    ; 368 LEs       ; 16 LEs               ; 352 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|X[5]         ;
+; 69:1               ; 8 bits    ; 368 LEs       ; 16 LEs               ; 352 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Y[5]         ;
+; 73:1               ; 8 bits    ; 384 LEs       ; 32 LEs               ; 352 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|accum[2]     ;
+; 193:1              ; 4 bits    ; 512 LEs       ; 8 LEs                ; 504 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|s_pointer[2] ;
+; 193:1              ; 3 bits    ; 384 LEs       ; 6 LEs                ; 378 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|s_pointer[6] ;
+; 27:1               ; 2 bits    ; 36 LEs        ; 8 LEs                ; 28 LEs                 ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|PC[0]        ;
+; 27:1               ; 6 bits    ; 108 LEs       ; 24 LEs               ; 84 LEs                 ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|PC[7]        ;
+; 30:1               ; 8 bits    ; 160 LEs       ; 32 LEs               ; 128 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|PC[14]       ;
+; 162:1              ; 2 bits    ; 216 LEs       ; 12 LEs               ; 204 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|push_data[4] ;
+; 162:1              ; 2 bits    ; 216 LEs       ; 12 LEs               ; 204 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|push_data[2] ;
+; 162:1              ; 4 bits    ; 432 LEs       ; 24 LEs               ; 408 LEs                ; Yes        ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|push_data[0] ;
+; 3:1                ; 4 bits    ; 8 LEs         ; 4 LEs                ; 4 LEs                  ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Selector16   ;
+; 4:1                ; 4 bits    ; 8 LEs         ; 8 LEs                ; 0 LEs                  ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Selector16   ;
+; 3:1                ; 4 bits    ; 8 LEs         ; 4 LEs                ; 4 LEs                  ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Selector13   ;
+; 4:1                ; 4 bits    ; 8 LEs         ; 8 LEs                ; 0 LEs                  ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Selector11   ;
+; 4:1                ; 16 bits   ; 32 LEs        ; 32 LEs               ; 0 LEs                  ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Mux24        ;
+; 3:1                ; 8 bits    ; 16 LEs        ; 16 LEs               ; 0 LEs                  ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Selector6    ;
+; 16:1               ; 8 bits    ; 80 LEs        ; 48 LEs               ; 32 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|Mux1                          ;
+; 16:1               ; 8 bits    ; 80 LEs        ; 32 LEs               ; 48 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|Mux13                         ;
+; 9:1                ; 8 bits    ; 48 LEs        ; 32 LEs               ; 16 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|Mux17                         ;
+; 9:1                ; 6 bits    ; 36 LEs        ; 24 LEs               ; 12 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|Mux29                         ;
+; 9:1                ; 2 bits    ; 12 LEs        ; 8 LEs                ; 4 LEs                  ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|Mux30                         ;
+; 16:1               ; 8 bits    ; 80 LEs        ; 48 LEs               ; 32 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Mux7         ;
+; 7:1                ; 16 bits   ; 64 LEs        ; 48 LEs               ; 16 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Mux40        ;
+; 6:1                ; 8 bits    ; 32 LEs        ; 16 LEs               ; 16 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Selector60   ;
+; 6:1                ; 6 bits    ; 24 LEs        ; 12 LEs               ; 12 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Mux13        ;
+; 10:1               ; 6 bits    ; 36 LEs        ; 18 LEs               ; 18 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Mux30        ;
+; 15:1               ; 4 bits    ; 40 LEs        ; 12 LEs               ; 28 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Selector11   ;
+; 15:1               ; 4 bits    ; 40 LEs        ; 12 LEs               ; 28 LEs                 ; No         ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst|Selector15   ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+--------------------------------------------------------------+
 
 
-+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-; Multiplexer Restructuring Statistics (Restructuring Performed)                                                                                                              ;
-+--------------------+-----------+---------------+----------------------+------------------------+------------+---------------------------------------------------------------+
-; Multiplexer Inputs ; Bus Width ; Baseline Area ; Area if Restructured ; Saving if Restructured ; Registered ; Example Multiplexer Output                                    ;
-+--------------------+-----------+---------------+----------------------+------------------------+------------+---------------------------------------------------------------+
-; 3:1                ; 24 bits   ; 48 LEs        ; 0 LEs                ; 48 LEs                 ; Yes        ; |assignment_top|challenge_generator:gen_inst|delay_counter[5] ;
-; 3:1                ; 7 bits    ; 14 LEs        ; 7 LEs                ; 7 LEs                  ; Yes        ; |assignment_top|bresenham_fsm:fsm_inst|clear_y[1]             ;
-; 3:1                ; 16 bits   ; 32 LEs        ; 0 LEs                ; 32 LEs                 ; Yes        ; |assignment_top|bresenham_fsm:fsm_inst|x[2]                   ;
-; 3:1                ; 10 bits   ; 20 LEs        ; 0 LEs                ; 20 LEs                 ; Yes        ; |assignment_top|bresenham_fsm:fsm_inst|y[15]                  ;
-; 4:1                ; 8 bits    ; 16 LEs        ; 0 LEs                ; 16 LEs                 ; Yes        ; |assignment_top|bresenham_fsm:fsm_inst|clear_x[2]             ;
-; 4:1                ; 9 bits    ; 18 LEs        ; 18 LEs               ; 0 LEs                  ; Yes        ; |assignment_top|bresenham_fsm:fsm_inst|d[15]                  ;
-; 4:1                ; 6 bits    ; 12 LEs        ; 12 LEs               ; 0 LEs                  ; Yes        ; |assignment_top|bresenham_fsm:fsm_inst|y[1]                   ;
-; 5:1                ; 6 bits    ; 18 LEs        ; 12 LEs               ; 6 LEs                  ; Yes        ; |assignment_top|bresenham_fsm:fsm_inst|d[6]                   ;
-; 6:1                ; 2 bits    ; 8 LEs         ; 6 LEs                ; 2 LEs                  ; No         ; |assignment_top|bresenham_fsm:fsm_inst|Selector3              ;
-; 9:1                ; 7 bits    ; 42 LEs        ; 21 LEs               ; 21 LEs                 ; No         ; |assignment_top|bresenham_fsm:fsm_inst|plot_y[5]              ;
-; 9:1                ; 8 bits    ; 48 LEs        ; 24 LEs               ; 24 LEs                 ; No         ; |assignment_top|bresenham_fsm:fsm_inst|ram_addr[3]            ;
-+--------------------+-----------+---------------+----------------------+------------------------+------------+---------------------------------------------------------------+
-
-
-+---------------------------------------------------------------------------------------------------+
-; Source assignments for framebuffer_ram:fb_ram|altsyncram:ram_rtl_0|altsyncram_acn1:auto_generated ;
-+---------------------------------+--------------------+------+-------------------------------------+
-; Assignment                      ; Value              ; From ; To                                  ;
-+---------------------------------+--------------------+------+-------------------------------------+
-; OPTIMIZE_POWER_DURING_SYNTHESIS ; NORMAL_COMPILATION ; -    ; -                                   ;
-+---------------------------------+--------------------+------+-------------------------------------+
++-------------------------------------------------------------------------------------------+
+; Source assignments for ram:system_ram|altsyncram:mem_rtl_0|altsyncram_jde1:auto_generated ;
++---------------------------------+--------------------+------+-----------------------------+
+; Assignment                      ; Value              ; From ; To                          ;
++---------------------------------+--------------------+------+-----------------------------+
+; OPTIMIZE_POWER_DURING_SYNTHESIS ; NORMAL_COMPILATION ; -    ; -                           ;
++---------------------------------+--------------------+------+-----------------------------+
 
 
 +-----------------------------------------------------------------------------------------------------------------+
@@ -643,96 +631,152 @@ Encoding Type:  One-Hot
 Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
 
 
-+----------------------------------------------------------------------------------------------+
-; Parameter Settings for Inferred Entity Instance: framebuffer_ram:fb_ram|altsyncram:ram_rtl_0 ;
-+------------------------------------+----------------------+----------------------------------+
-; Parameter Name                     ; Value                ; Type                             ;
-+------------------------------------+----------------------+----------------------------------+
-; BYTE_SIZE_BLOCK                    ; 8                    ; Untyped                          ;
-; AUTO_CARRY_CHAINS                  ; ON                   ; AUTO_CARRY                       ;
-; IGNORE_CARRY_BUFFERS               ; OFF                  ; IGNORE_CARRY                     ;
-; AUTO_CASCADE_CHAINS                ; ON                   ; AUTO_CASCADE                     ;
-; IGNORE_CASCADE_BUFFERS             ; OFF                  ; IGNORE_CASCADE                   ;
-; WIDTH_BYTEENA                      ; 1                    ; Untyped                          ;
-; OPERATION_MODE                     ; DUAL_PORT            ; Untyped                          ;
-; WIDTH_A                            ; 3                    ; Untyped                          ;
-; WIDTHAD_A                          ; 15                   ; Untyped                          ;
-; NUMWORDS_A                         ; 19200                ; Untyped                          ;
-; OUTDATA_REG_A                      ; UNREGISTERED         ; Untyped                          ;
-; ADDRESS_ACLR_A                     ; NONE                 ; Untyped                          ;
-; OUTDATA_ACLR_A                     ; NONE                 ; Untyped                          ;
-; WRCONTROL_ACLR_A                   ; NONE                 ; Untyped                          ;
-; INDATA_ACLR_A                      ; NONE                 ; Untyped                          ;
-; BYTEENA_ACLR_A                     ; NONE                 ; Untyped                          ;
-; WIDTH_B                            ; 3                    ; Untyped                          ;
-; WIDTHAD_B                          ; 15                   ; Untyped                          ;
-; NUMWORDS_B                         ; 19200                ; Untyped                          ;
-; INDATA_REG_B                       ; CLOCK1               ; Untyped                          ;
-; WRCONTROL_WRADDRESS_REG_B          ; CLOCK1               ; Untyped                          ;
-; RDCONTROL_REG_B                    ; CLOCK1               ; Untyped                          ;
-; ADDRESS_REG_B                      ; CLOCK0               ; Untyped                          ;
-; OUTDATA_REG_B                      ; UNREGISTERED         ; Untyped                          ;
-; BYTEENA_REG_B                      ; CLOCK1               ; Untyped                          ;
-; INDATA_ACLR_B                      ; NONE                 ; Untyped                          ;
-; WRCONTROL_ACLR_B                   ; NONE                 ; Untyped                          ;
-; ADDRESS_ACLR_B                     ; NONE                 ; Untyped                          ;
-; OUTDATA_ACLR_B                     ; NONE                 ; Untyped                          ;
-; RDCONTROL_ACLR_B                   ; NONE                 ; Untyped                          ;
-; BYTEENA_ACLR_B                     ; NONE                 ; Untyped                          ;
-; WIDTH_BYTEENA_A                    ; 1                    ; Untyped                          ;
-; WIDTH_BYTEENA_B                    ; 1                    ; Untyped                          ;
-; RAM_BLOCK_TYPE                     ; AUTO                 ; Untyped                          ;
-; BYTE_SIZE                          ; 8                    ; Untyped                          ;
-; READ_DURING_WRITE_MODE_MIXED_PORTS ; OLD_DATA             ; Untyped                          ;
-; READ_DURING_WRITE_MODE_PORT_A      ; NEW_DATA_NO_NBE_READ ; Untyped                          ;
-; READ_DURING_WRITE_MODE_PORT_B      ; NEW_DATA_NO_NBE_READ ; Untyped                          ;
-; INIT_FILE                          ; UNUSED               ; Untyped                          ;
-; INIT_FILE_LAYOUT                   ; PORT_A               ; Untyped                          ;
-; MAXIMUM_DEPTH                      ; 0                    ; Untyped                          ;
-; CLOCK_ENABLE_INPUT_A               ; NORMAL               ; Untyped                          ;
-; CLOCK_ENABLE_INPUT_B               ; NORMAL               ; Untyped                          ;
-; CLOCK_ENABLE_OUTPUT_A              ; NORMAL               ; Untyped                          ;
-; CLOCK_ENABLE_OUTPUT_B              ; NORMAL               ; Untyped                          ;
-; CLOCK_ENABLE_CORE_A                ; USE_INPUT_CLKEN      ; Untyped                          ;
-; CLOCK_ENABLE_CORE_B                ; USE_INPUT_CLKEN      ; Untyped                          ;
-; ENABLE_ECC                         ; FALSE                ; Untyped                          ;
-; ECC_PIPELINE_STAGE_ENABLED         ; FALSE                ; Untyped                          ;
-; WIDTH_ECCSTATUS                    ; 3                    ; Untyped                          ;
-; DEVICE_FAMILY                      ; Cyclone V            ; Untyped                          ;
-; CBXI_PARAMETER                     ; altsyncram_acn1      ; Untyped                          ;
-+------------------------------------+----------------------+----------------------------------+
++--------------------------------------------------------------------------------------+
+; Parameter Settings for Inferred Entity Instance: ram:system_ram|altsyncram:mem_rtl_0 ;
++------------------------------------+-------------------------------+-----------------+
+; Parameter Name                     ; Value                         ; Type            ;
++------------------------------------+-------------------------------+-----------------+
+; BYTE_SIZE_BLOCK                    ; 8                             ; Untyped         ;
+; AUTO_CARRY_CHAINS                  ; ON                            ; AUTO_CARRY      ;
+; IGNORE_CARRY_BUFFERS               ; OFF                           ; IGNORE_CARRY    ;
+; AUTO_CASCADE_CHAINS                ; ON                            ; AUTO_CASCADE    ;
+; IGNORE_CASCADE_BUFFERS             ; OFF                           ; IGNORE_CASCADE  ;
+; WIDTH_BYTEENA                      ; 1                             ; Untyped         ;
+; OPERATION_MODE                     ; SINGLE_PORT                   ; Untyped         ;
+; WIDTH_A                            ; 8                             ; Untyped         ;
+; WIDTHAD_A                          ; 16                            ; Untyped         ;
+; NUMWORDS_A                         ; 65536                         ; Untyped         ;
+; OUTDATA_REG_A                      ; UNREGISTERED                  ; Untyped         ;
+; ADDRESS_ACLR_A                     ; NONE                          ; Untyped         ;
+; OUTDATA_ACLR_A                     ; NONE                          ; Untyped         ;
+; WRCONTROL_ACLR_A                   ; NONE                          ; Untyped         ;
+; INDATA_ACLR_A                      ; NONE                          ; Untyped         ;
+; BYTEENA_ACLR_A                     ; NONE                          ; Untyped         ;
+; WIDTH_B                            ; 1                             ; Untyped         ;
+; WIDTHAD_B                          ; 1                             ; Untyped         ;
+; NUMWORDS_B                         ; 1                             ; Untyped         ;
+; INDATA_REG_B                       ; CLOCK1                        ; Untyped         ;
+; WRCONTROL_WRADDRESS_REG_B          ; CLOCK1                        ; Untyped         ;
+; RDCONTROL_REG_B                    ; CLOCK1                        ; Untyped         ;
+; ADDRESS_REG_B                      ; CLOCK1                        ; Untyped         ;
+; OUTDATA_REG_B                      ; UNREGISTERED                  ; Untyped         ;
+; BYTEENA_REG_B                      ; CLOCK1                        ; Untyped         ;
+; INDATA_ACLR_B                      ; NONE                          ; Untyped         ;
+; WRCONTROL_ACLR_B                   ; NONE                          ; Untyped         ;
+; ADDRESS_ACLR_B                     ; NONE                          ; Untyped         ;
+; OUTDATA_ACLR_B                     ; NONE                          ; Untyped         ;
+; RDCONTROL_ACLR_B                   ; NONE                          ; Untyped         ;
+; BYTEENA_ACLR_B                     ; NONE                          ; Untyped         ;
+; WIDTH_BYTEENA_A                    ; 1                             ; Untyped         ;
+; WIDTH_BYTEENA_B                    ; 1                             ; Untyped         ;
+; RAM_BLOCK_TYPE                     ; AUTO                          ; Untyped         ;
+; BYTE_SIZE                          ; 8                             ; Untyped         ;
+; READ_DURING_WRITE_MODE_MIXED_PORTS ; DONT_CARE                     ; Untyped         ;
+; READ_DURING_WRITE_MODE_PORT_A      ; NEW_DATA_NO_NBE_READ          ; Untyped         ;
+; READ_DURING_WRITE_MODE_PORT_B      ; NEW_DATA_NO_NBE_READ          ; Untyped         ;
+; INIT_FILE                          ; db/nes.ram0_ram_1d0cf.hdl.mif ; Untyped         ;
+; INIT_FILE_LAYOUT                   ; PORT_A                        ; Untyped         ;
+; MAXIMUM_DEPTH                      ; 0                             ; Untyped         ;
+; CLOCK_ENABLE_INPUT_A               ; NORMAL                        ; Untyped         ;
+; CLOCK_ENABLE_INPUT_B               ; NORMAL                        ; Untyped         ;
+; CLOCK_ENABLE_OUTPUT_A              ; NORMAL                        ; Untyped         ;
+; CLOCK_ENABLE_OUTPUT_B              ; NORMAL                        ; Untyped         ;
+; CLOCK_ENABLE_CORE_A                ; USE_INPUT_CLKEN               ; Untyped         ;
+; CLOCK_ENABLE_CORE_B                ; USE_INPUT_CLKEN               ; Untyped         ;
+; ENABLE_ECC                         ; FALSE                         ; Untyped         ;
+; ECC_PIPELINE_STAGE_ENABLED         ; FALSE                         ; Untyped         ;
+; WIDTH_ECCSTATUS                    ; 3                             ; Untyped         ;
+; DEVICE_FAMILY                      ; Cyclone V                     ; Untyped         ;
+; CBXI_PARAMETER                     ; altsyncram_jde1               ; Untyped         ;
++------------------------------------+-------------------------------+-----------------+
 Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
 
 
-+-----------------------------------------------------------------------------------------+
-; altsyncram Parameter Settings by Entity Instance                                        ;
-+-------------------------------------------+---------------------------------------------+
-; Name                                      ; Value                                       ;
-+-------------------------------------------+---------------------------------------------+
-; Number of entity instances                ; 1                                           ;
-; Entity Instance                           ; framebuffer_ram:fb_ram|altsyncram:ram_rtl_0 ;
-;     -- OPERATION_MODE                     ; DUAL_PORT                                   ;
-;     -- WIDTH_A                            ; 3                                           ;
-;     -- NUMWORDS_A                         ; 19200                                       ;
-;     -- OUTDATA_REG_A                      ; UNREGISTERED                                ;
-;     -- WIDTH_B                            ; 3                                           ;
-;     -- NUMWORDS_B                         ; 19200                                       ;
-;     -- ADDRESS_REG_B                      ; CLOCK0                                      ;
-;     -- OUTDATA_REG_B                      ; UNREGISTERED                                ;
-;     -- RAM_BLOCK_TYPE                     ; AUTO                                        ;
-;     -- READ_DURING_WRITE_MODE_MIXED_PORTS ; OLD_DATA                                    ;
-+-------------------------------------------+---------------------------------------------+
++---------------------------------------------------------------------------------+
+; altsyncram Parameter Settings by Entity Instance                                ;
++-------------------------------------------+-------------------------------------+
+; Name                                      ; Value                               ;
++-------------------------------------------+-------------------------------------+
+; Number of entity instances                ; 1                                   ;
+; Entity Instance                           ; ram:system_ram|altsyncram:mem_rtl_0 ;
+;     -- OPERATION_MODE                     ; SINGLE_PORT                         ;
+;     -- WIDTH_A                            ; 8                                   ;
+;     -- NUMWORDS_A                         ; 65536                               ;
+;     -- OUTDATA_REG_A                      ; UNREGISTERED                        ;
+;     -- WIDTH_B                            ; 1                                   ;
+;     -- NUMWORDS_B                         ; 1                                   ;
+;     -- ADDRESS_REG_B                      ; CLOCK1                              ;
+;     -- OUTDATA_REG_B                      ; UNREGISTERED                        ;
+;     -- RAM_BLOCK_TYPE                     ; AUTO                                ;
+;     -- READ_DURING_WRITE_MODE_MIXED_PORTS ; DONT_CARE                           ;
++-------------------------------------------+-------------------------------------+
 
 
-+-------------------------------------------------------------------------------------------------------------------------+
-; Port Connectivity Checks: "vga_sync_generator:sync_gen"                                                                 ;
-+---------------+--------+----------+-------------------------------------------------------------------------------------+
-; Port          ; Type   ; Severity ; Details                                                                             ;
-+---------------+--------+----------+-------------------------------------------------------------------------------------+
-; pixel_x[1..0] ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-; pixel_y[1..0] ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-; pixel_y[9]    ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-+---------------+--------+----------+-------------------------------------------------------------------------------------+
++----------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "ppu_core:ppu_inst|oam_ram:sprite_ram"                                               ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+; Port ; Type   ; Severity ; Details                                                                             ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+; dout ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+
+
++----------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "ppu_core:ppu_inst|palette_ram:pal_ram"                                              ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+; Port ; Type   ; Severity ; Details                                                                             ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+; dout ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+
+
++----------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "ppu_core:ppu_inst|vram_2k:nametable_ram"                                            ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+; Port ; Type   ; Severity ; Details                                                                             ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+; dout ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++------+--------+----------+-------------------------------------------------------------------------------------+
+
+
++--------------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "ppu_core:ppu_inst|ppu_registers:regs_inst"                                              ;
++----------+--------+----------+-------------------------------------------------------------------------------------+
+; Port     ; Type   ; Severity ; Details                                                                             ;
++----------+--------+----------+-------------------------------------------------------------------------------------+
+; ctrl_out ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
+; mask_out ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++----------+--------+----------+-------------------------------------------------------------------------------------+
+
+
++-----------------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "ppu_core:ppu_inst"                                                                         ;
++-------------+--------+----------+-------------------------------------------------------------------------------------+
+; Port        ; Type   ; Severity ; Details                                                                             ;
++-------------+--------+----------+-------------------------------------------------------------------------------------+
+; chr_addr    ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
+; chr_data_in ; Input  ; Info     ; Stuck at GND                                                                        ;
+; chr_read_n  ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++-------------+--------+----------+-------------------------------------------------------------------------------------+
+
+
++-----------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst"                                              ;
++-------+--------+----------+-------------------------------------------------------------------------------------+
+; Port  ; Type   ; Severity ; Details                                                                             ;
++-------+--------+----------+-------------------------------------------------------------------------------------+
+; accum ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
+; s_reg ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++-------+--------+----------+-------------------------------------------------------------------------------------+
+
+
++------------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "nes_clock_generator:clk_gen"                                                          ;
++--------+--------+----------+-------------------------------------------------------------------------------------+
+; Port   ; Type   ; Severity ; Details                                                                             ;
++--------+--------+----------+-------------------------------------------------------------------------------------+
+; ppu_ce ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++--------+--------+----------+-------------------------------------------------------------------------------------+
 
 
 +-----------------------------------------------------+
@@ -740,46 +784,37 @@ Note: In order to hide this table in the UI and the text report file, please set
 +-----------------------+-----------------------------+
 ; Type                  ; Count                       ;
 +-----------------------+-----------------------------+
-; arriav_ff             ; 186                         ;
-;     CLR               ; 15                          ;
-;     CLR SCLR          ; 34                          ;
-;     CLR SLD           ; 1                           ;
-;     ENA               ; 39                          ;
-;     ENA CLR           ; 40                          ;
-;     ENA CLR SCLR      ; 10                          ;
+; arriav_ff             ; 148                         ;
+;     CLR               ; 33                          ;
+;     ENA               ; 72                          ;
 ;     ENA SCLR          ; 34                          ;
-;     ENA SLD           ; 7                           ;
-;     SCLR              ; 1                           ;
-;     plain             ; 5                           ;
-; arriav_lcell_comb     ; 439                         ;
-;     arith             ; 181                         ;
+;     SCLR              ; 2                           ;
+;     SLD               ; 3                           ;
+;     plain             ; 4                           ;
+; arriav_lcell_comb     ; 1052                        ;
+;     arith             ; 288                         ;
+;         0 data inputs ; 13                          ;
+;         1 data inputs ; 130                         ;
+;         2 data inputs ; 65                          ;
+;         3 data inputs ; 8                           ;
+;         4 data inputs ; 33                          ;
+;         5 data inputs ; 39                          ;
+;     extend            ; 41                          ;
+;         7 data inputs ; 41                          ;
+;     normal            ; 723                         ;
 ;         0 data inputs ; 2                           ;
-;         1 data inputs ; 121                         ;
-;         2 data inputs ; 44                          ;
-;         3 data inputs ; 5                           ;
-;         4 data inputs ; 7                           ;
-;         5 data inputs ; 2                           ;
-;     extend            ; 3                           ;
-;         7 data inputs ; 3                           ;
-;     normal            ; 200                         ;
-;         0 data inputs ; 2                           ;
-;         1 data inputs ; 15                          ;
-;         2 data inputs ; 32                          ;
-;         3 data inputs ; 21                          ;
-;         4 data inputs ; 39                          ;
-;         5 data inputs ; 53                          ;
-;         6 data inputs ; 38                          ;
-;     shared            ; 55                          ;
-;         0 data inputs ; 2                           ;
-;         1 data inputs ; 2                           ;
-;         2 data inputs ; 36                          ;
-;         3 data inputs ; 15                          ;
+;         1 data inputs ; 1                           ;
+;         2 data inputs ; 50                          ;
+;         3 data inputs ; 96                          ;
+;         4 data inputs ; 95                          ;
+;         5 data inputs ; 209                         ;
+;         6 data inputs ; 270                         ;
 ; boundary_port         ; 96                          ;
 ; generic_pll           ; 1                           ;
-; stratixv_ram_block    ; 9                           ;
+; stratixv_ram_block    ; 64                          ;
 ;                       ;                             ;
-; Max LUT depth         ; 6.90                        ;
-; Average LUT depth     ; 3.51                        ;
+; Max LUT depth         ; 15.00                       ;
+; Average LUT depth     ; 9.25                        ;
 +-----------------------+-----------------------------+
 
 
@@ -788,7 +823,7 @@ Note: In order to hide this table in the UI and the text report file, please set
 +----------------+--------------+
 ; Partition Name ; Elapsed Time ;
 +----------------+--------------+
-; Top            ; 00:00:01     ;
+; Top            ; 00:00:05     ;
 +----------------+--------------+
 
 
@@ -798,15 +833,12 @@ Note: In order to hide this table in the UI and the text report file, please set
 Info: *******************************************************************
 Info: Running Quartus Prime Analysis & Synthesis
     Info: Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
-    Info: Processing started: Fri Apr 17 19:09:12 2026
+    Info: Processing started: Mon Apr 20 00:20:55 2026
 Info: Command: quartus_map --read_settings_files=on --write_settings_files=off nes -c nes
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
 Info (20030): Parallel compilation is enabled and will use 4 of the 4 processors detected
-Info (12021): Found 1 design units, including 1 entities, in source file video_subsystem/challenge_generator.v
-    Info (12023): Found entity 1: challenge_generator File: /home/someone/hassaan/nes/video_subsystem/challenge_generator.v Line: 1
-Info (12021): Found 2 design units, including 2 entities, in source file video_subsystem/assignment_top.v
-    Info (12023): Found entity 1: assignment_top File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 1
-    Info (12023): Found entity 2: framebuffer_ram File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 178
+Warning (12019): Can't analyze file -- file video_subsystem/challenge_generator.v is missing
+Warning (12019): Can't analyze file -- file video_subsystem/assignment_top.v is missing
 Info (12021): Found 0 design units, including 0 entities, in source file video_subsystem/memory/vram.v
 Info (12021): Found 0 design units, including 0 entities, in source file video_subsystem/memory/pallete_ram.v
 Info (12021): Found 0 design units, including 0 entities, in source file video_subsystem/ppu/ppu_sprite_eval.v
@@ -818,13 +850,15 @@ Info (12021): Found 5 design units, including 5 entities, in source file video_s
     Info (12023): Found entity 5: oam_ram File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 214
 Info (12021): Found 1 design units, including 1 entities, in source file video_subsystem/ppu/ppu_bg_render.v
     Info (12023): Found entity 1: ppu_bg_render File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_bg_render.v Line: 6
-Info (12021): Found 0 design units, including 0 entities, in source file video_subsystem/vga/nes_vga_core.v
+Info (12021): Found 2 design units, including 2 entities, in source file video_subsystem/vga/nes_vga_core.v
+    Info (12023): Found entity 1: nes_vga_core File: /home/someone/hassaan/nes/video_subsystem/vga/nes_vga_core.v Line: 7
+    Info (12023): Found entity 2: nes_coordinate_mapper File: /home/someone/hassaan/nes/video_subsystem/vga/nes_vga_core.v Line: 62
 Info (12021): Found 1 design units, including 1 entities, in source file video_subsystem/vga/nes_pallete_lut.v
     Info (12023): Found entity 1: nes_palette_lut File: /home/someone/hassaan/nes/video_subsystem/vga/nes_pallete_lut.v Line: 9
 Info (12021): Found 1 design units, including 1 entities, in source file MOS_6502_CPU_tb.v
     Info (12023): Found entity 1: MOS_6502_CPU_tb File: /home/someone/hassaan/nes/MOS_6502_CPU_tb.v Line: 2
 Info (12021): Found 1 design units, including 1 entities, in source file ram.v
-    Info (12023): Found entity 1: ram File: /home/someone/hassaan/nes/ram.v Line: 1
+    Info (12023): Found entity 1: ram File: /home/someone/hassaan/nes/ram.v Line: 2
 Info (12021): Found 1 design units, including 1 entities, in source file cpu_decoder.v
     Info (12023): Found entity 1: cpu_decoder File: /home/someone/hassaan/nes/cpu_decoder.v Line: 1
 Info (12021): Found 1 design units, including 1 entities, in source file MOS_6502_CPU.v
@@ -833,20 +867,19 @@ Info (12021): Found 1 design units, including 1 entities, in source file cpu_fsm
     Info (12023): Found entity 1: cpu_fsm File: /home/someone/hassaan/nes/cpu_fsm.v Line: 1
 Info (12021): Found 1 design units, including 1 entities, in source file nes_clock_generator.v
     Info (12023): Found entity 1: nes_clock_generator File: /home/someone/hassaan/nes/nes_clock_generator.v Line: 8
-Info (12021): Found 1 design units, including 1 entities, in source file video_subsystem/bresenham_fsm.v
-    Info (12023): Found entity 1: bresenham_fsm File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 1
+Warning (12019): Can't analyze file -- file video_subsystem/bresenham_fsm.v is missing
 Info (12021): Found 1 design units, including 1 entities, in source file video_subsystem/vga/vga_sync_generator.v
     Info (12023): Found entity 1: vga_sync_generator File: /home/someone/hassaan/nes/video_subsystem/vga/vga_sync_generator.v Line: 6
+Info (12021): Found 1 design units, including 1 entities, in source file nes_top.v
+    Info (12023): Found entity 1: nes_top File: /home/someone/hassaan/nes/nes_top.v Line: 8
 Info (12021): Found 1 design units, including 1 entities, in source file vga_pll.v
     Info (12023): Found entity 1: vga_pll File: /home/someone/hassaan/nes/vga_pll.v Line: 8
 Info (12021): Found 1 design units, including 1 entities, in source file vga_pll/vga_pll_0002.v
     Info (12023): Found entity 1: vga_pll_0002 File: /home/someone/hassaan/nes/vga_pll/vga_pll_0002.v Line: 2
 Info (12021): Found 1 design units, including 1 entities, in source file output_files/hex_decoder.v
     Info (12023): Found entity 1: hex_decoder File: /home/someone/hassaan/nes/output_files/hex_decoder.v Line: 7
-Info (12127): Elaborating entity "assignment_top" for the top level hierarchy
-Warning (10230): Verilog HDL assignment warning at assignment_top.v(141): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 141
-Warning (10230): Verilog HDL assignment warning at assignment_top.v(143): truncated value with size 32 to match size of target (15) File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 143
-Info (12128): Elaborating entity "vga_pll" for hierarchy "vga_pll:pll_inst" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 42
+Info (12127): Elaborating entity "nes_top" for the top level hierarchy
+Info (12128): Elaborating entity "vga_pll" for hierarchy "vga_pll:pll_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 64
 Info (12128): Elaborating entity "vga_pll_0002" for hierarchy "vga_pll:pll_inst|vga_pll_0002:vga_pll_inst" File: /home/someone/hassaan/nes/vga_pll.v Line: 20
 Info (12128): Elaborating entity "altera_pll" for hierarchy "vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i" File: /home/someone/hassaan/nes/vga_pll/vga_pll_0002.v Line: 85
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "wire_to_nowhere_64" into its bus
@@ -912,125 +945,184 @@ Info (12133): Instantiated megafunction "vga_pll:pll_inst|vga_pll_0002:vga_pll_i
     Info (12134): Parameter "duty_cycle17" = "50"
     Info (12134): Parameter "pll_type" = "General"
     Info (12134): Parameter "pll_subtype" = "General"
-Info (12128): Elaborating entity "challenge_generator" for hierarchy "challenge_generator:gen_inst" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 77
-Info (12128): Elaborating entity "bresenham_fsm" for hierarchy "bresenham_fsm:fsm_inst" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 106
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(123): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 123
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(124): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 124
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(125): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 125
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(126): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 126
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(127): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 127
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(128): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 128
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(129): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 129
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(130): truncated value with size 8 to match size of target (7) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 130
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(135): truncated value with size 32 to match size of target (15) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 135
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(159): truncated value with size 32 to match size of target (16) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 159
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(162): truncated value with size 32 to match size of target (16) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 162
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(170): truncated value with size 32 to match size of target (16) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 170
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(172): truncated value with size 32 to match size of target (16) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 172
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(173): truncated value with size 32 to match size of target (16) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 173
-Warning (10230): Verilog HDL assignment warning at bresenham_fsm.v(175): truncated value with size 32 to match size of target (16) File: /home/someone/hassaan/nes/video_subsystem/bresenham_fsm.v Line: 175
-Info (12128): Elaborating entity "framebuffer_ram" for hierarchy "framebuffer_ram:fb_ram" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 121
-Info (12128): Elaborating entity "vga_sync_generator" for hierarchy "vga_sync_generator:sync_gen" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 138
-Info (12128): Elaborating entity "hex_decoder" for hierarchy "hex_decoder:hex0_inst" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 159
+Info (12128): Elaborating entity "nes_clock_generator" for hierarchy "nes_clock_generator:clk_gen" File: /home/someone/hassaan/nes/nes_top.v Line: 74
+Info (12128): Elaborating entity "MOS_6502_CPU" for hierarchy "MOS_6502_CPU:cpu_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 92
+Warning (10036): Verilog HDL or VHDL warning at MOS_6502_CPU.v(52): object "is_brk_vec" assigned a value but never read File: /home/someone/hassaan/nes/MOS_6502_CPU.v Line: 52
+Info (12128): Elaborating entity "cpu_fsm" for hierarchy "MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst" File: /home/someone/hassaan/nes/MOS_6502_CPU.v Line: 110
+Info (12128): Elaborating entity "cpu_decoder" for hierarchy "MOS_6502_CPU:cpu_inst|cpu_decoder:dec_inst" File: /home/someone/hassaan/nes/MOS_6502_CPU.v Line: 118
+Info (12128): Elaborating entity "ram" for hierarchy "ram:system_ram" File: /home/someone/hassaan/nes/nes_top.v Line: 118
+Info (12128): Elaborating entity "ppu_core" for hierarchy "ppu_core:ppu_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 154
+Info (12128): Elaborating entity "ppu_registers" for hierarchy "ppu_core:ppu_inst|ppu_registers:regs_inst" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 53
+Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(113): object "scroll_x" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 113
+Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(114): object "scroll_y" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 114
+Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(115): object "read_buffer" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 115
+Warning (10240): Verilog HDL Always Construct warning at ppu_core.v(117): inferring latch(es) for variable "status_reg", which holds its previous value in one or more paths through the always construct File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
+Info (10041): Inferred latch for "status_reg[0]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
+Info (10041): Inferred latch for "status_reg[1]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
+Info (10041): Inferred latch for "status_reg[2]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
+Info (10041): Inferred latch for "status_reg[3]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
+Info (10041): Inferred latch for "status_reg[4]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
+Info (10041): Inferred latch for "status_reg[5]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
+Info (10041): Inferred latch for "status_reg[6]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
+Info (12128): Elaborating entity "vram_2k" for hierarchy "ppu_core:ppu_inst|vram_2k:nametable_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 62
+Info (12128): Elaborating entity "palette_ram" for hierarchy "ppu_core:ppu_inst|palette_ram:pal_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 71
+Info (12128): Elaborating entity "oam_ram" for hierarchy "ppu_core:ppu_inst|oam_ram:sprite_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 80
 Info (19000): Inferred 1 megafunctions from design logic
-    Info (276029): Inferred altsyncram megafunction from the following design logic: "framebuffer_ram:fb_ram|ram_rtl_0" 
-        Info (286033): Parameter OPERATION_MODE set to DUAL_PORT
-        Info (286033): Parameter WIDTH_A set to 3
-        Info (286033): Parameter WIDTHAD_A set to 15
-        Info (286033): Parameter NUMWORDS_A set to 19200
-        Info (286033): Parameter WIDTH_B set to 3
-        Info (286033): Parameter WIDTHAD_B set to 15
-        Info (286033): Parameter NUMWORDS_B set to 19200
+    Info (276029): Inferred altsyncram megafunction from the following design logic: "ram:system_ram|mem_rtl_0" 
+        Info (286033): Parameter OPERATION_MODE set to SINGLE_PORT
+        Info (286033): Parameter WIDTH_A set to 8
+        Info (286033): Parameter WIDTHAD_A set to 16
+        Info (286033): Parameter NUMWORDS_A set to 65536
+        Info (286033): Parameter OUTDATA_REG_A set to UNREGISTERED
         Info (286033): Parameter ADDRESS_ACLR_A set to NONE
-        Info (286033): Parameter OUTDATA_REG_B set to UNREGISTERED
-        Info (286033): Parameter ADDRESS_ACLR_B set to NONE
-        Info (286033): Parameter OUTDATA_ACLR_B set to NONE
-        Info (286033): Parameter ADDRESS_REG_B set to CLOCK0
+        Info (286033): Parameter OUTDATA_ACLR_A set to NONE
         Info (286033): Parameter INDATA_ACLR_A set to NONE
         Info (286033): Parameter WRCONTROL_ACLR_A set to NONE
-        Info (286033): Parameter READ_DURING_WRITE_MODE_MIXED_PORTS set to OLD_DATA
-Info (12130): Elaborated megafunction instantiation "framebuffer_ram:fb_ram|altsyncram:ram_rtl_0"
-Info (12133): Instantiated megafunction "framebuffer_ram:fb_ram|altsyncram:ram_rtl_0" with the following parameter:
-    Info (12134): Parameter "OPERATION_MODE" = "DUAL_PORT"
-    Info (12134): Parameter "WIDTH_A" = "3"
-    Info (12134): Parameter "WIDTHAD_A" = "15"
-    Info (12134): Parameter "NUMWORDS_A" = "19200"
-    Info (12134): Parameter "WIDTH_B" = "3"
-    Info (12134): Parameter "WIDTHAD_B" = "15"
-    Info (12134): Parameter "NUMWORDS_B" = "19200"
+        Info (286033): Parameter INIT_FILE set to db/nes.ram0_ram_1d0cf.hdl.mif
+Info (12130): Elaborated megafunction instantiation "ram:system_ram|altsyncram:mem_rtl_0"
+Info (12133): Instantiated megafunction "ram:system_ram|altsyncram:mem_rtl_0" with the following parameter:
+    Info (12134): Parameter "OPERATION_MODE" = "SINGLE_PORT"
+    Info (12134): Parameter "WIDTH_A" = "8"
+    Info (12134): Parameter "WIDTHAD_A" = "16"
+    Info (12134): Parameter "NUMWORDS_A" = "65536"
+    Info (12134): Parameter "OUTDATA_REG_A" = "UNREGISTERED"
     Info (12134): Parameter "ADDRESS_ACLR_A" = "NONE"
-    Info (12134): Parameter "OUTDATA_REG_B" = "UNREGISTERED"
-    Info (12134): Parameter "ADDRESS_ACLR_B" = "NONE"
-    Info (12134): Parameter "OUTDATA_ACLR_B" = "NONE"
-    Info (12134): Parameter "ADDRESS_REG_B" = "CLOCK0"
+    Info (12134): Parameter "OUTDATA_ACLR_A" = "NONE"
     Info (12134): Parameter "INDATA_ACLR_A" = "NONE"
     Info (12134): Parameter "WRCONTROL_ACLR_A" = "NONE"
-    Info (12134): Parameter "READ_DURING_WRITE_MODE_MIXED_PORTS" = "OLD_DATA"
-Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_acn1.tdf
-    Info (12023): Found entity 1: altsyncram_acn1 File: /home/someone/hassaan/nes/db/altsyncram_acn1.tdf Line: 32
-Info (12021): Found 1 design units, including 1 entities, in source file db/decode_7la.tdf
-    Info (12023): Found entity 1: decode_7la File: /home/someone/hassaan/nes/db/decode_7la.tdf Line: 23
-Info (12021): Found 1 design units, including 1 entities, in source file db/mux_ifb.tdf
-    Info (12023): Found entity 1: mux_ifb File: /home/someone/hassaan/nes/db/mux_ifb.tdf Line: 23
+    Info (12134): Parameter "INIT_FILE" = "db/nes.ram0_ram_1d0cf.hdl.mif"
+Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_jde1.tdf
+    Info (12023): Found entity 1: altsyncram_jde1 File: /home/someone/hassaan/nes/db/altsyncram_jde1.tdf Line: 34
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
+Info (12021): Found 1 design units, including 1 entities, in source file db/decode_dla.tdf
+    Info (12023): Found entity 1: decode_dla File: /home/someone/hassaan/nes/db/decode_dla.tdf Line: 23
+Info (12021): Found 1 design units, including 1 entities, in source file db/decode_61a.tdf
+    Info (12023): Found entity 1: decode_61a File: /home/someone/hassaan/nes/db/decode_61a.tdf Line: 23
+Info (12021): Found 1 design units, including 1 entities, in source file db/mux_tfb.tdf
+    Info (12023): Found entity 1: mux_tfb File: /home/someone/hassaan/nes/db/mux_tfb.tdf Line: 23
 Warning (13024): Output pins are stuck at VCC or GND
-    Warning (13410): Pin "VGA_SYNC_N" is stuck at GND File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 12
-    Warning (13410): Pin "LEDR[5]" is stuck at GND File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 15
-    Warning (13410): Pin "LEDR[7]" is stuck at GND File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 15
-    Warning (13410): Pin "HEX1[0]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 17
-    Warning (13410): Pin "HEX1[1]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 17
-    Warning (13410): Pin "HEX1[2]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 17
-    Warning (13410): Pin "HEX1[3]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 17
-    Warning (13410): Pin "HEX1[4]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 17
-    Warning (13410): Pin "HEX1[5]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 17
-    Warning (13410): Pin "HEX1[6]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 17
-    Warning (13410): Pin "HEX2[0]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 18
-    Warning (13410): Pin "HEX2[1]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 18
-    Warning (13410): Pin "HEX2[2]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 18
-    Warning (13410): Pin "HEX2[3]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 18
-    Warning (13410): Pin "HEX2[4]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 18
-    Warning (13410): Pin "HEX2[5]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 18
-    Warning (13410): Pin "HEX2[6]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 18
-    Warning (13410): Pin "HEX3[0]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 19
-    Warning (13410): Pin "HEX3[1]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 19
-    Warning (13410): Pin "HEX3[2]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 19
-    Warning (13410): Pin "HEX3[3]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 19
-    Warning (13410): Pin "HEX3[4]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 19
-    Warning (13410): Pin "HEX3[5]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 19
-    Warning (13410): Pin "HEX3[6]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 19
-    Warning (13410): Pin "HEX4[0]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 20
-    Warning (13410): Pin "HEX4[1]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 20
-    Warning (13410): Pin "HEX4[2]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 20
-    Warning (13410): Pin "HEX4[3]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 20
-    Warning (13410): Pin "HEX4[4]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 20
-    Warning (13410): Pin "HEX4[5]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 20
-    Warning (13410): Pin "HEX4[6]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 20
-    Warning (13410): Pin "HEX5[0]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 22
-    Warning (13410): Pin "HEX5[1]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 22
-    Warning (13410): Pin "HEX5[2]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 22
-    Warning (13410): Pin "HEX5[3]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 22
-    Warning (13410): Pin "HEX5[4]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 22
-    Warning (13410): Pin "HEX5[5]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 22
-    Warning (13410): Pin "HEX5[6]" is stuck at VCC File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 22
+    Warning (13410): Pin "LEDR[0]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 14
+    Warning (13410): Pin "LEDR[1]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 14
+    Warning (13410): Pin "LEDR[2]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 14
+    Warning (13410): Pin "LEDR[3]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 14
+    Warning (13410): Pin "LEDR[4]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 14
+    Warning (13410): Pin "LEDR[5]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 14
+    Warning (13410): Pin "LEDR[6]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 14
+    Warning (13410): Pin "HEX0[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 15
+    Warning (13410): Pin "HEX0[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 15
+    Warning (13410): Pin "HEX0[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 15
+    Warning (13410): Pin "HEX0[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 15
+    Warning (13410): Pin "HEX0[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 15
+    Warning (13410): Pin "HEX0[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 15
+    Warning (13410): Pin "HEX0[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 15
+    Warning (13410): Pin "HEX1[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
+    Warning (13410): Pin "HEX1[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
+    Warning (13410): Pin "HEX1[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
+    Warning (13410): Pin "HEX1[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
+    Warning (13410): Pin "HEX1[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
+    Warning (13410): Pin "HEX1[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
+    Warning (13410): Pin "HEX1[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
+    Warning (13410): Pin "HEX2[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
+    Warning (13410): Pin "HEX2[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
+    Warning (13410): Pin "HEX2[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
+    Warning (13410): Pin "HEX2[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
+    Warning (13410): Pin "HEX2[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
+    Warning (13410): Pin "HEX2[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
+    Warning (13410): Pin "HEX2[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
+    Warning (13410): Pin "HEX3[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
+    Warning (13410): Pin "HEX3[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
+    Warning (13410): Pin "HEX3[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
+    Warning (13410): Pin "HEX3[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
+    Warning (13410): Pin "HEX3[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
+    Warning (13410): Pin "HEX3[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
+    Warning (13410): Pin "HEX3[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
+    Warning (13410): Pin "HEX4[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
+    Warning (13410): Pin "HEX4[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
+    Warning (13410): Pin "HEX4[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
+    Warning (13410): Pin "HEX4[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
+    Warning (13410): Pin "HEX4[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
+    Warning (13410): Pin "HEX4[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
+    Warning (13410): Pin "HEX4[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
+    Warning (13410): Pin "HEX5[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
+    Warning (13410): Pin "HEX5[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
+    Warning (13410): Pin "HEX5[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
+    Warning (13410): Pin "HEX5[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
+    Warning (13410): Pin "HEX5[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
+    Warning (13410): Pin "HEX5[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
+    Warning (13410): Pin "HEX5[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
+    Warning (13410): Pin "VGA_R[0]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
+    Warning (13410): Pin "VGA_R[1]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
+    Warning (13410): Pin "VGA_R[2]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
+    Warning (13410): Pin "VGA_R[3]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
+    Warning (13410): Pin "VGA_R[4]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
+    Warning (13410): Pin "VGA_R[5]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
+    Warning (13410): Pin "VGA_R[6]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
+    Warning (13410): Pin "VGA_R[7]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
+    Warning (13410): Pin "VGA_G[0]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 24
+    Warning (13410): Pin "VGA_G[1]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 24
+    Warning (13410): Pin "VGA_G[2]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 24
+    Warning (13410): Pin "VGA_G[3]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 24
+    Warning (13410): Pin "VGA_G[4]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 24
+    Warning (13410): Pin "VGA_G[5]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 24
+    Warning (13410): Pin "VGA_G[6]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 24
+    Warning (13410): Pin "VGA_G[7]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 24
+    Warning (13410): Pin "VGA_B[0]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 25
+    Warning (13410): Pin "VGA_B[1]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 25
+    Warning (13410): Pin "VGA_B[2]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 25
+    Warning (13410): Pin "VGA_B[3]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 25
+    Warning (13410): Pin "VGA_B[4]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 25
+    Warning (13410): Pin "VGA_B[5]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 25
+    Warning (13410): Pin "VGA_B[6]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 25
+    Warning (13410): Pin "VGA_B[7]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 25
+    Warning (13410): Pin "VGA_HS" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 26
+    Warning (13410): Pin "VGA_VS" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 27
+    Warning (13410): Pin "VGA_BLANK_N" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 28
+    Warning (13410): Pin "VGA_SYNC_N" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 29
+    Warning (13410): Pin "VGA_CLK" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 31
 Info (286030): Timing-Driven Synthesis is running
-Info (17049): 4 registers lost all their fanouts during netlist optimizations.
 Info (144001): Generated suppressed messages file /home/someone/hassaan/nes/output_files/nes.map.smsg
 Info (16010): Generating hard_block partition "hard_block:auto_generated_inst"
-    Info (16011): Adding 9 node(s), including 0 DDIO, 1 PLL, 0 transceiver and 0 LCELL
-Warning (21074): Design contains 3 input pin(s) that do not drive logic
-    Warning (15610): No output dependent on input pin "KEY[1]" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 3
-    Warning (15610): No output dependent on input pin "KEY[2]" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 3
-    Warning (15610): No output dependent on input pin "SW[8]" File: /home/someone/hassaan/nes/video_subsystem/assignment_top.v Line: 4
-Info (21057): Implemented 571 device resources after synthesis - the final resource count might be different
+    Info (16011): Adding 7 node(s), including 0 DDIO, 1 PLL, 0 transceiver and 0 LCELL
+Warning (21074): Design contains 13 input pin(s) that do not drive logic
+    Warning (15610): No output dependent on input pin "KEY[0]" File: /home/someone/hassaan/nes/nes_top.v Line: 10
+    Warning (15610): No output dependent on input pin "KEY[1]" File: /home/someone/hassaan/nes/nes_top.v Line: 10
+    Warning (15610): No output dependent on input pin "KEY[2]" File: /home/someone/hassaan/nes/nes_top.v Line: 10
+    Warning (15610): No output dependent on input pin "SW[0]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[1]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[2]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[3]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[4]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[5]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[6]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[7]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[8]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+    Warning (15610): No output dependent on input pin "SW[9]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
+Info (21057): Implemented 1270 device resources after synthesis - the final resource count might be different
     Info (21058): Implemented 15 input pins
     Info (21059): Implemented 81 output pins
-    Info (21061): Implemented 465 logic cells
-    Info (21064): Implemented 9 RAM segments
+    Info (21061): Implemented 1109 logic cells
+    Info (21064): Implemented 64 RAM segments
     Info (21065): Implemented 1 PLLs
-Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 61 warnings
-    Info: Peak virtual memory: 500 megabytes
-    Info: Processing ended: Fri Apr 17 19:09:19 2026
-    Info: Elapsed time: 00:00:07
-    Info: Total CPU time (on all processors): 00:00:17
+Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 118 warnings
+    Info: Peak virtual memory: 518 megabytes
+    Info: Processing ended: Mon Apr 20 00:21:08 2026
+    Info: Elapsed time: 00:00:13
+    Info: Total CPU time (on all processors): 00:00:21
 
 
 +------------------------------------------+

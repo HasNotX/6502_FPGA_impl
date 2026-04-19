@@ -13,7 +13,7 @@ module ppu_core (
     // CPU Interface (8-bit data bus, 3-bit address bus for registers 0-7)
     input  wire [2:0]  cpu_addr,
     input  wire [7:0]  cpu_data_in,
-    output reg  [7:0]  cpu_data_out,
+    output wire [7:0]  cpu_data_out,  // FIXED: Changed from 'reg' to 'wire'
     input  wire        cpu_read_n,    // Active low read
     input  wire        cpu_write_n,   // Active low write
 

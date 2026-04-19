@@ -44,7 +44,7 @@ module MOS_6502_CPU (
     // ---------------------------------------------------------------------
     // Address Bus Mux
     // ---------------------------------------------------------------------
-    wire [5:0] fsm_state = fsm_inst.state;
+    wire [5:0] fsm_state;
 
     wire is_reset_vec = (fsm_state == 6'd25 || fsm_state == 6'd26 ||
                          fsm_state == 6'd27 || fsm_state == 6'd28);
@@ -105,7 +105,8 @@ module MOS_6502_CPU (
         .ptr_lo          (ptr_lo),
         .ptr_hi          (ptr_hi),
         .write_en        (write_en),
-        .push_data       (push_data)
+        .push_data       (push_data),
+		  .state				 (fsm_state)
     );
 
     cpu_decoder dec_inst (
