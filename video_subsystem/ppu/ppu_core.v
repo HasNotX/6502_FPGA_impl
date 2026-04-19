@@ -13,14 +13,18 @@ module ppu_core (
     // CPU Interface (8-bit data bus, 3-bit address bus for registers 0-7)
     input  wire [2:0]  cpu_addr,
     input  wire [7:0]  cpu_data_in,
-    output wire [7:0]  cpu_data_out,  // FIXED: Changed from 'reg' to 'wire'
+    output wire [7:0]  cpu_data_out,  
     input  wire        cpu_read_n,    // Active low read
     input  wire        cpu_write_n,   // Active low write
 
     // External Cartridge Interface (CHR-ROM Bus)
     output wire [13:0] chr_addr,
     input  wire [7:0]  chr_data_in,
-    output wire        chr_read_n
+    output wire        chr_read_n,
+    
+    // NEW: Hardware Telemetry Exports
+    output wire [7:0]  dbg_ctrl,
+    output wire [7:0]  dbg_mask
 );
 
     // Internal PPU Register States
@@ -29,6 +33,10 @@ module ppu_core (
     wire [7:0] ppu_status;
     wire [7:0] oam_addr;
     wire [14:0] vram_addr;        // The 15-bit internal PPU address pointer
+    
+    // Wire up the debug exports
+    assign dbg_ctrl = ppu_ctrl;
+    assign dbg_mask = ppu_mask;
     
     // Internal Memory Buses
     wire [7:0] vram_data_out;

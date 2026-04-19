@@ -1,5 +1,5 @@
 Analysis & Synthesis report for nes
-Mon Apr 20 00:21:08 2026
+Mon Apr 20 01:09:47 2026
 Quartus Prime Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
 
 
@@ -27,10 +27,10 @@ Quartus Prime Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
  19. Port Connectivity Checks: "ppu_core:ppu_inst|oam_ram:sprite_ram"
  20. Port Connectivity Checks: "ppu_core:ppu_inst|palette_ram:pal_ram"
  21. Port Connectivity Checks: "ppu_core:ppu_inst|vram_2k:nametable_ram"
- 22. Port Connectivity Checks: "ppu_core:ppu_inst|ppu_registers:regs_inst"
- 23. Port Connectivity Checks: "ppu_core:ppu_inst"
- 24. Port Connectivity Checks: "MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst"
- 25. Port Connectivity Checks: "nes_clock_generator:clk_gen"
+ 22. Port Connectivity Checks: "ppu_core:ppu_inst"
+ 23. Port Connectivity Checks: "MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst"
+ 24. Port Connectivity Checks: "nes_clock_generator:clk_gen"
+ 25. Port Connectivity Checks: "vga_pll:pll_inst"
  26. Post-Synthesis Netlist Statistics for Top Partition
  27. Elapsed Time Per Partition
  28. Analysis & Synthesis Messages
@@ -61,13 +61,13 @@ on the Quartus Prime software download page.
 +-----------------------------------------------------------------------------------+
 ; Analysis & Synthesis Summary                                                      ;
 +---------------------------------+-------------------------------------------------+
-; Analysis & Synthesis Status     ; Successful - Mon Apr 20 00:21:08 2026           ;
+; Analysis & Synthesis Status     ; Successful - Mon Apr 20 01:09:47 2026           ;
 ; Quartus Prime Version           ; 25.1std.0 Build 1129 10/21/2025 SC Lite Edition ;
 ; Revision Name                   ; nes                                             ;
 ; Top-level Entity Name           ; nes_top                                         ;
 ; Family                          ; Cyclone V                                       ;
 ; Logic utilization (in ALMs)     ; N/A                                             ;
-; Total registers                 ; 148                                             ;
+; Total registers                 ; 164                                             ;
 ; Total pins                      ; 96                                              ;
 ; Total virtual pins              ; 0                                               ;
 ; Total block memory bits         ; 524,288                                         ;
@@ -181,7 +181,7 @@ on the Quartus Prime software download page.
 ;                            ;             ;
 ; Usage by Processor         ; % Time Used ;
 ;     Processor 1            ; 100.0%      ;
-;     Processor 2            ;   0.1%      ;
+;     Processor 2            ;   0.0%      ;
 ;     Processor 3            ;   0.0%      ;
 ;     Processor 4            ;   0.0%      ;
 +----------------------------+-------------+
@@ -201,6 +201,7 @@ on the Quartus Prime software download page.
 ; nes_top.v                        ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/nes_top.v                                                     ;         ;
 ; vga_pll.v                        ; yes             ; User Wizard-Generated File                            ; /home/someone/hassaan/nes/vga_pll.v                                                     ; vga_pll ;
 ; vga_pll/vga_pll_0002.v           ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/vga_pll/vga_pll_0002.v                                        ; vga_pll ;
+; output_files/hex_decoder.v       ; yes             ; User Verilog HDL File                                 ; /home/someone/hassaan/nes/output_files/hex_decoder.v                                    ;         ;
 ; altera_pll.v                     ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altera_pll.v          ;         ;
 ; altsyncram.tdf                   ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf        ;         ;
 ; stratix_ram_block.inc            ; yes             ; Megafunction                                          ; /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/stratix_ram_block.inc ;         ;
@@ -224,16 +225,16 @@ on the Quartus Prime software download page.
 +---------------------------------------------+-----------------------------------------------------------------------------------+
 ; Resource                                    ; Usage                                                                             ;
 +---------------------------------------------+-----------------------------------------------------------------------------------+
-; Estimate of Logic utilization (ALMs needed) ; 683                                                                               ;
+; Estimate of Logic utilization (ALMs needed) ; 718                                                                               ;
 ;                                             ;                                                                                   ;
-; Combinational ALUT usage for logic          ; 1050                                                                              ;
-;     -- 7 input functions                    ; 41                                                                                ;
-;     -- 6 input functions                    ; 270                                                                               ;
-;     -- 5 input functions                    ; 248                                                                               ;
-;     -- 4 input functions                    ; 128                                                                               ;
+; Combinational ALUT usage for logic          ; 1104                                                                              ;
+;     -- 7 input functions                    ; 36                                                                                ;
+;     -- 6 input functions                    ; 289                                                                               ;
+;     -- 5 input functions                    ; 245                                                                               ;
+;     -- 4 input functions                    ; 171                                                                               ;
 ;     -- <=3 input functions                  ; 363                                                                               ;
 ;                                             ;                                                                                   ;
-; Dedicated logic registers                   ; 148                                                                               ;
+; Dedicated logic registers                   ; 164                                                                               ;
 ;                                             ;                                                                                   ;
 ; I/O pins                                    ; 96                                                                                ;
 ; Total MLAB memory bits                      ; 0                                                                                 ;
@@ -245,9 +246,9 @@ on the Quartus Prime software download page.
 ;     -- PLLs                                 ; 1                                                                                 ;
 ;                                             ;                                                                                   ;
 ; Maximum fan-out node                        ; vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i|outclk_wire[0] ;
-; Maximum fan-out                             ; 214                                                                               ;
-; Total fan-out                               ; 6236                                                                              ;
-; Average fan-out                             ; 4.29                                                                              ;
+; Maximum fan-out                             ; 288                                                                               ;
+; Total fan-out                               ; 6477                                                                              ;
+; Average fan-out                             ; 4.25                                                                              ;
 +---------------------------------------------+-----------------------------------------------------------------------------------+
 
 
@@ -256,11 +257,17 @@ on the Quartus Prime software download page.
 +-------------------------------------------+---------------------+---------------------------+-------------------+------------+------+--------------+----------------------------------------------------------------------------------------------------+---------------------+--------------+
 ; Compilation Hierarchy Node                ; Combinational ALUTs ; Dedicated Logic Registers ; Block Memory Bits ; DSP Blocks ; Pins ; Virtual Pins ; Full Hierarchy Name                                                                                ; Entity Name         ; Library Name ;
 +-------------------------------------------+---------------------+---------------------------+-------------------+------------+------+--------------+----------------------------------------------------------------------------------------------------+---------------------+--------------+
-; |nes_top                                  ; 1050 (10)           ; 148 (1)                   ; 524288            ; 0          ; 96   ; 0            ; |nes_top                                                                                           ; nes_top             ; work         ;
-;    |MOS_6502_CPU:cpu_inst|                ; 968 (140)           ; 111 (0)                   ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst                                                                     ; MOS_6502_CPU        ; work         ;
-;       |cpu_decoder:dec_inst|              ; 52 (52)             ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_decoder:dec_inst                                                ; cpu_decoder         ; work         ;
-;       |cpu_fsm:fsm_inst|                  ; 776 (776)           ; 111 (111)                 ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst                                                    ; cpu_fsm             ; work         ;
+; |nes_top                                  ; 1104 (10)           ; 164 (1)                   ; 524288            ; 0          ; 96   ; 0            ; |nes_top                                                                                           ; nes_top             ; work         ;
+;    |MOS_6502_CPU:cpu_inst|                ; 992 (141)           ; 111 (0)                   ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst                                                                     ; MOS_6502_CPU        ; work         ;
+;       |cpu_decoder:dec_inst|              ; 48 (48)             ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_decoder:dec_inst                                                ; cpu_decoder         ; work         ;
+;       |cpu_fsm:fsm_inst|                  ; 803 (803)           ; 111 (111)                 ; 0                 ; 0          ; 0    ; 0            ; |nes_top|MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst                                                    ; cpu_fsm             ; work         ;
+;    |hex_decoder:hex2_inst|                ; 7 (7)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|hex_decoder:hex2_inst                                                                     ; hex_decoder         ; work         ;
+;    |hex_decoder:hex3_inst|                ; 7 (7)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|hex_decoder:hex3_inst                                                                     ; hex_decoder         ; work         ;
+;    |hex_decoder:hex4_inst|                ; 7 (7)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|hex_decoder:hex4_inst                                                                     ; hex_decoder         ; work         ;
+;    |hex_decoder:hex5_inst|                ; 7 (7)               ; 0 (0)                     ; 0                 ; 0          ; 0    ; 0            ; |nes_top|hex_decoder:hex5_inst                                                                     ; hex_decoder         ; work         ;
 ;    |nes_clock_generator:clk_gen|          ; 33 (33)             ; 33 (33)                   ; 0                 ; 0          ; 0    ; 0            ; |nes_top|nes_clock_generator:clk_gen                                                               ; nes_clock_generator ; work         ;
+;    |ppu_core:ppu_inst|                    ; 2 (0)               ; 16 (0)                    ; 0                 ; 0          ; 0    ; 0            ; |nes_top|ppu_core:ppu_inst                                                                         ; ppu_core            ; work         ;
+;       |ppu_registers:regs_inst|           ; 2 (2)               ; 16 (16)                   ; 0                 ; 0          ; 0    ; 0            ; |nes_top|ppu_core:ppu_inst|ppu_registers:regs_inst                                                 ; ppu_registers       ; work         ;
 ;    |ram:system_ram|                       ; 39 (0)              ; 3 (0)                     ; 524288            ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram                                                                            ; ram                 ; work         ;
 ;       |altsyncram:mem_rtl_0|              ; 39 (0)              ; 3 (0)                     ; 524288            ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram|altsyncram:mem_rtl_0                                                       ; altsyncram          ; work         ;
 ;          |altsyncram_jde1:auto_generated| ; 39 (0)              ; 3 (3)                     ; 524288            ; 0          ; 0    ; 0            ; |nes_top|ram:system_ram|altsyncram:mem_rtl_0|altsyncram_jde1:auto_generated                        ; altsyncram_jde1     ; work         ;
@@ -319,12 +326,12 @@ Note: For table entries with two numbers listed, the numbers in parentheses indi
 +----------------------------------------------+-------+
 ; Statistic                                    ; Value ;
 +----------------------------------------------+-------+
-; Total registers                              ; 148   ;
-; Number of registers using Synchronous Clear  ; 36    ;
+; Total registers                              ; 164   ;
+; Number of registers using Synchronous Clear  ; 33    ;
 ; Number of registers using Synchronous Load   ; 3     ;
-; Number of registers using Asynchronous Clear ; 33    ;
+; Number of registers using Asynchronous Clear ; 49    ;
 ; Number of registers using Asynchronous Load  ; 0     ;
-; Number of registers using Clock Enable       ; 106   ;
+; Number of registers using Clock Enable       ; 124   ;
 ; Number of registers using Preset             ; 0     ;
 +----------------------------------------------+-------+
 
@@ -739,16 +746,6 @@ Note: In order to hide this table in the UI and the text report file, please set
 +------+--------+----------+-------------------------------------------------------------------------------------+
 
 
-+--------------------------------------------------------------------------------------------------------------------+
-; Port Connectivity Checks: "ppu_core:ppu_inst|ppu_registers:regs_inst"                                              ;
-+----------+--------+----------+-------------------------------------------------------------------------------------+
-; Port     ; Type   ; Severity ; Details                                                                             ;
-+----------+--------+----------+-------------------------------------------------------------------------------------+
-; ctrl_out ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-; mask_out ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
-+----------+--------+----------+-------------------------------------------------------------------------------------+
-
-
 +-----------------------------------------------------------------------------------------------------------------------+
 ; Port Connectivity Checks: "ppu_core:ppu_inst"                                                                         ;
 +-------------+--------+----------+-------------------------------------------------------------------------------------+
@@ -779,42 +776,51 @@ Note: In order to hide this table in the UI and the text report file, please set
 +--------+--------+----------+-------------------------------------------------------------------------------------+
 
 
++----------------------------------------------+
+; Port Connectivity Checks: "vga_pll:pll_inst" ;
++------+-------+----------+--------------------+
+; Port ; Type  ; Severity ; Details            ;
++------+-------+----------+--------------------+
+; rst  ; Input ; Info     ; Stuck at GND       ;
++------+-------+----------+--------------------+
+
+
 +-----------------------------------------------------+
 ; Post-Synthesis Netlist Statistics for Top Partition ;
 +-----------------------+-----------------------------+
 ; Type                  ; Count                       ;
 +-----------------------+-----------------------------+
-; arriav_ff             ; 148                         ;
+; arriav_ff             ; 164                         ;
 ;     CLR               ; 33                          ;
-;     ENA               ; 72                          ;
-;     ENA SCLR          ; 34                          ;
-;     SCLR              ; 2                           ;
+;     ENA               ; 75                          ;
+;     ENA CLR           ; 16                          ;
+;     ENA SCLR          ; 33                          ;
 ;     SLD               ; 3                           ;
 ;     plain             ; 4                           ;
-; arriav_lcell_comb     ; 1052                        ;
-;     arith             ; 288                         ;
-;         0 data inputs ; 13                          ;
+; arriav_lcell_comb     ; 1110                        ;
+;     arith             ; 289                         ;
+;         0 data inputs ; 14                          ;
 ;         1 data inputs ; 130                         ;
 ;         2 data inputs ; 65                          ;
 ;         3 data inputs ; 8                           ;
 ;         4 data inputs ; 33                          ;
 ;         5 data inputs ; 39                          ;
-;     extend            ; 41                          ;
-;         7 data inputs ; 41                          ;
-;     normal            ; 723                         ;
+;     extend            ; 36                          ;
+;         7 data inputs ; 36                          ;
+;     normal            ; 785                         ;
 ;         0 data inputs ; 2                           ;
-;         1 data inputs ; 1                           ;
+;         1 data inputs ; 5                           ;
 ;         2 data inputs ; 50                          ;
-;         3 data inputs ; 96                          ;
-;         4 data inputs ; 95                          ;
-;         5 data inputs ; 209                         ;
-;         6 data inputs ; 270                         ;
+;         3 data inputs ; 95                          ;
+;         4 data inputs ; 138                         ;
+;         5 data inputs ; 206                         ;
+;         6 data inputs ; 289                         ;
 ; boundary_port         ; 96                          ;
 ; generic_pll           ; 1                           ;
 ; stratixv_ram_block    ; 64                          ;
 ;                       ;                             ;
-; Max LUT depth         ; 15.00                       ;
-; Average LUT depth     ; 9.25                        ;
+; Max LUT depth         ; 14.70                       ;
+; Average LUT depth     ; 8.64                        ;
 +-----------------------+-----------------------------+
 
 
@@ -833,7 +839,7 @@ Note: In order to hide this table in the UI and the text report file, please set
 Info: *******************************************************************
 Info: Running Quartus Prime Analysis & Synthesis
     Info: Version 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
-    Info: Processing started: Mon Apr 20 00:20:55 2026
+    Info: Processing started: Mon Apr 20 01:09:35 2026
 Info: Command: quartus_map --read_settings_files=on --write_settings_files=off nes -c nes
 Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
 Info (20030): Parallel compilation is enabled and will use 4 of the 4 processors detected
@@ -844,10 +850,10 @@ Info (12021): Found 0 design units, including 0 entities, in source file video_s
 Info (12021): Found 0 design units, including 0 entities, in source file video_subsystem/ppu/ppu_sprite_eval.v
 Info (12021): Found 5 design units, including 5 entities, in source file video_subsystem/ppu/ppu_core.v
     Info (12023): Found entity 1: ppu_core File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 9
-    Info (12023): Found entity 2: ppu_registers File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 92
-    Info (12023): Found entity 3: vram_2k File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 184
-    Info (12023): Found entity 4: palette_ram File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 199
-    Info (12023): Found entity 5: oam_ram File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 214
+    Info (12023): Found entity 2: ppu_registers File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 100
+    Info (12023): Found entity 3: vram_2k File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 192
+    Info (12023): Found entity 4: palette_ram File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 207
+    Info (12023): Found entity 5: oam_ram File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 222
 Info (12021): Found 1 design units, including 1 entities, in source file video_subsystem/ppu/ppu_bg_render.v
     Info (12023): Found entity 1: ppu_bg_render File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_bg_render.v Line: 6
 Info (12021): Found 2 design units, including 2 entities, in source file video_subsystem/vga/nes_vga_core.v
@@ -879,7 +885,7 @@ Info (12021): Found 1 design units, including 1 entities, in source file vga_pll
 Info (12021): Found 1 design units, including 1 entities, in source file output_files/hex_decoder.v
     Info (12023): Found entity 1: hex_decoder File: /home/someone/hassaan/nes/output_files/hex_decoder.v Line: 7
 Info (12127): Elaborating entity "nes_top" for the top level hierarchy
-Info (12128): Elaborating entity "vga_pll" for hierarchy "vga_pll:pll_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 64
+Info (12128): Elaborating entity "vga_pll" for hierarchy "vga_pll:pll_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 57
 Info (12128): Elaborating entity "vga_pll_0002" for hierarchy "vga_pll:pll_inst|vga_pll_0002:vga_pll_inst" File: /home/someone/hassaan/nes/vga_pll.v Line: 20
 Info (12128): Elaborating entity "altera_pll" for hierarchy "vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i" File: /home/someone/hassaan/nes/vga_pll/vga_pll_0002.v Line: 85
 Info (10008): Verilog HDL or VHDL information: EDA Netlist Writer cannot regroup multidimensional array "wire_to_nowhere_64" into its bus
@@ -945,28 +951,29 @@ Info (12133): Instantiated megafunction "vga_pll:pll_inst|vga_pll_0002:vga_pll_i
     Info (12134): Parameter "duty_cycle17" = "50"
     Info (12134): Parameter "pll_type" = "General"
     Info (12134): Parameter "pll_subtype" = "General"
-Info (12128): Elaborating entity "nes_clock_generator" for hierarchy "nes_clock_generator:clk_gen" File: /home/someone/hassaan/nes/nes_top.v Line: 74
-Info (12128): Elaborating entity "MOS_6502_CPU" for hierarchy "MOS_6502_CPU:cpu_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 92
+Info (12128): Elaborating entity "nes_clock_generator" for hierarchy "nes_clock_generator:clk_gen" File: /home/someone/hassaan/nes/nes_top.v Line: 67
+Info (12128): Elaborating entity "MOS_6502_CPU" for hierarchy "MOS_6502_CPU:cpu_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 85
 Warning (10036): Verilog HDL or VHDL warning at MOS_6502_CPU.v(52): object "is_brk_vec" assigned a value but never read File: /home/someone/hassaan/nes/MOS_6502_CPU.v Line: 52
 Info (12128): Elaborating entity "cpu_fsm" for hierarchy "MOS_6502_CPU:cpu_inst|cpu_fsm:fsm_inst" File: /home/someone/hassaan/nes/MOS_6502_CPU.v Line: 110
 Info (12128): Elaborating entity "cpu_decoder" for hierarchy "MOS_6502_CPU:cpu_inst|cpu_decoder:dec_inst" File: /home/someone/hassaan/nes/MOS_6502_CPU.v Line: 118
-Info (12128): Elaborating entity "ram" for hierarchy "ram:system_ram" File: /home/someone/hassaan/nes/nes_top.v Line: 118
-Info (12128): Elaborating entity "ppu_core" for hierarchy "ppu_core:ppu_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 154
-Info (12128): Elaborating entity "ppu_registers" for hierarchy "ppu_core:ppu_inst|ppu_registers:regs_inst" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 53
-Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(113): object "scroll_x" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 113
-Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(114): object "scroll_y" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 114
-Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(115): object "read_buffer" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 115
-Warning (10240): Verilog HDL Always Construct warning at ppu_core.v(117): inferring latch(es) for variable "status_reg", which holds its previous value in one or more paths through the always construct File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
-Info (10041): Inferred latch for "status_reg[0]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
-Info (10041): Inferred latch for "status_reg[1]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
-Info (10041): Inferred latch for "status_reg[2]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
-Info (10041): Inferred latch for "status_reg[3]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
-Info (10041): Inferred latch for "status_reg[4]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
-Info (10041): Inferred latch for "status_reg[5]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
-Info (10041): Inferred latch for "status_reg[6]" at ppu_core.v(117) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 117
-Info (12128): Elaborating entity "vram_2k" for hierarchy "ppu_core:ppu_inst|vram_2k:nametable_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 62
-Info (12128): Elaborating entity "palette_ram" for hierarchy "ppu_core:ppu_inst|palette_ram:pal_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 71
-Info (12128): Elaborating entity "oam_ram" for hierarchy "ppu_core:ppu_inst|oam_ram:sprite_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 80
+Info (12128): Elaborating entity "ram" for hierarchy "ram:system_ram" File: /home/someone/hassaan/nes/nes_top.v Line: 108
+Info (12128): Elaborating entity "ppu_core" for hierarchy "ppu_core:ppu_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 145
+Info (12128): Elaborating entity "ppu_registers" for hierarchy "ppu_core:ppu_inst|ppu_registers:regs_inst" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 61
+Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(121): object "scroll_x" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 121
+Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(122): object "scroll_y" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 122
+Warning (10036): Verilog HDL or VHDL warning at ppu_core.v(123): object "read_buffer" assigned a value but never read File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 123
+Warning (10240): Verilog HDL Always Construct warning at ppu_core.v(125): inferring latch(es) for variable "status_reg", which holds its previous value in one or more paths through the always construct File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 125
+Info (10041): Inferred latch for "status_reg[0]" at ppu_core.v(125) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 125
+Info (10041): Inferred latch for "status_reg[1]" at ppu_core.v(125) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 125
+Info (10041): Inferred latch for "status_reg[2]" at ppu_core.v(125) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 125
+Info (10041): Inferred latch for "status_reg[3]" at ppu_core.v(125) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 125
+Info (10041): Inferred latch for "status_reg[4]" at ppu_core.v(125) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 125
+Info (10041): Inferred latch for "status_reg[5]" at ppu_core.v(125) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 125
+Info (10041): Inferred latch for "status_reg[6]" at ppu_core.v(125) File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 125
+Info (12128): Elaborating entity "vram_2k" for hierarchy "ppu_core:ppu_inst|vram_2k:nametable_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 70
+Info (12128): Elaborating entity "palette_ram" for hierarchy "ppu_core:ppu_inst|palette_ram:pal_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 79
+Info (12128): Elaborating entity "oam_ram" for hierarchy "ppu_core:ppu_inst|oam_ram:sprite_ram" File: /home/someone/hassaan/nes/video_subsystem/ppu/ppu_core.v Line: 88
+Info (12128): Elaborating entity "hex_decoder" for hierarchy "hex_decoder:hex5_inst" File: /home/someone/hassaan/nes/nes_top.v Line: 160
 Info (19000): Inferred 1 megafunctions from design logic
     Info (276029): Inferred altsyncram megafunction from the following design logic: "ram:system_ram|mem_rtl_0" 
         Info (286033): Parameter OPERATION_MODE set to SINGLE_PORT
@@ -993,22 +1000,6 @@ Info (12133): Instantiated megafunction "ram:system_ram|altsyncram:mem_rtl_0" wi
     Info (12134): Parameter "INIT_FILE" = "db/nes.ram0_ram_1d0cf.hdl.mif"
 Info (12021): Found 1 design units, including 1 entities, in source file db/altsyncram_jde1.tdf
     Info (12023): Found entity 1: altsyncram_jde1 File: /home/someone/hassaan/nes/db/altsyncram_jde1.tdf Line: 34
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
-Warning (127007): Memory Initialization File or Hexadecimal (Intel-Format) File "/home/someone/hassaan/nes/db/nes.ram0_ram_1d0cf.hdl.mif" contains "don't care" values -- overwriting them with 0s File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altsyncram.tdf Line: 792
 Info (12021): Found 1 design units, including 1 entities, in source file db/decode_dla.tdf
     Info (12023): Found entity 1: decode_dla File: /home/someone/hassaan/nes/db/decode_dla.tdf Line: 23
 Info (12021): Found 1 design units, including 1 entities, in source file db/decode_61a.tdf
@@ -1037,34 +1028,6 @@ Warning (13024): Output pins are stuck at VCC or GND
     Warning (13410): Pin "HEX1[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
     Warning (13410): Pin "HEX1[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
     Warning (13410): Pin "HEX1[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 16
-    Warning (13410): Pin "HEX2[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
-    Warning (13410): Pin "HEX2[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
-    Warning (13410): Pin "HEX2[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
-    Warning (13410): Pin "HEX2[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
-    Warning (13410): Pin "HEX2[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
-    Warning (13410): Pin "HEX2[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
-    Warning (13410): Pin "HEX2[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 17
-    Warning (13410): Pin "HEX3[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
-    Warning (13410): Pin "HEX3[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
-    Warning (13410): Pin "HEX3[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
-    Warning (13410): Pin "HEX3[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
-    Warning (13410): Pin "HEX3[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
-    Warning (13410): Pin "HEX3[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
-    Warning (13410): Pin "HEX3[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 18
-    Warning (13410): Pin "HEX4[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
-    Warning (13410): Pin "HEX4[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
-    Warning (13410): Pin "HEX4[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
-    Warning (13410): Pin "HEX4[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
-    Warning (13410): Pin "HEX4[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
-    Warning (13410): Pin "HEX4[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
-    Warning (13410): Pin "HEX4[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 19
-    Warning (13410): Pin "HEX5[0]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
-    Warning (13410): Pin "HEX5[1]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
-    Warning (13410): Pin "HEX5[2]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
-    Warning (13410): Pin "HEX5[3]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
-    Warning (13410): Pin "HEX5[4]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
-    Warning (13410): Pin "HEX5[5]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
-    Warning (13410): Pin "HEX5[6]" is stuck at VCC File: /home/someone/hassaan/nes/nes_top.v Line: 20
     Warning (13410): Pin "VGA_R[0]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
     Warning (13410): Pin "VGA_R[1]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
     Warning (13410): Pin "VGA_R[2]" is stuck at GND File: /home/someone/hassaan/nes/nes_top.v Line: 23
@@ -1097,7 +1060,9 @@ Warning (13024): Output pins are stuck at VCC or GND
 Info (286030): Timing-Driven Synthesis is running
 Info (144001): Generated suppressed messages file /home/someone/hassaan/nes/output_files/nes.map.smsg
 Info (16010): Generating hard_block partition "hard_block:auto_generated_inst"
-    Info (16011): Adding 7 node(s), including 0 DDIO, 1 PLL, 0 transceiver and 0 LCELL
+    Info (16011): Adding 5 node(s), including 0 DDIO, 1 PLL, 0 transceiver and 0 LCELL
+Warning: RST port on the PLL is not properly connected on instance vga_pll:pll_inst|vga_pll_0002:vga_pll_inst|altera_pll:altera_pll_i|general[0].gpll. The reset port on the PLL should be connected. If the PLL loses lock for any reason, you might need to manually reset the PLL in order to re-establish lock to the reference clock. File: /home/someone/altera_lite/25.1std/quartus/libraries/megafunctions/altera_pll.v Line: 749
+    Info: Must be connected
 Warning (21074): Design contains 13 input pin(s) that do not drive logic
     Warning (15610): No output dependent on input pin "KEY[0]" File: /home/someone/hassaan/nes/nes_top.v Line: 10
     Warning (15610): No output dependent on input pin "KEY[1]" File: /home/someone/hassaan/nes/nes_top.v Line: 10
@@ -1112,16 +1077,16 @@ Warning (21074): Design contains 13 input pin(s) that do not drive logic
     Warning (15610): No output dependent on input pin "SW[7]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
     Warning (15610): No output dependent on input pin "SW[8]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
     Warning (15610): No output dependent on input pin "SW[9]" File: /home/someone/hassaan/nes/nes_top.v Line: 11
-Info (21057): Implemented 1270 device resources after synthesis - the final resource count might be different
+Info (21057): Implemented 1340 device resources after synthesis - the final resource count might be different
     Info (21058): Implemented 15 input pins
     Info (21059): Implemented 81 output pins
-    Info (21061): Implemented 1109 logic cells
+    Info (21061): Implemented 1179 logic cells
     Info (21064): Implemented 64 RAM segments
     Info (21065): Implemented 1 PLLs
-Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 118 warnings
-    Info: Peak virtual memory: 518 megabytes
-    Info: Processing ended: Mon Apr 20 00:21:08 2026
-    Info: Elapsed time: 00:00:13
+Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 75 warnings
+    Info: Peak virtual memory: 492 megabytes
+    Info: Processing ended: Mon Apr 20 01:09:47 2026
+    Info: Elapsed time: 00:00:12
     Info: Total CPU time (on all processors): 00:00:21
 
 

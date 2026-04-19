@@ -32,6 +32,14 @@ module nes_top (
 
     wire reset = ~KEY[3]; // Active high reset
     
+    // Turn off unused HEX displays for now
+    assign HEX0 = 7'b1111111;
+    assign HEX1 = 7'b1111111;
+    assign HEX2 = 7'b1111111;
+    assign HEX3 = 7'b1111111;
+    assign HEX4 = 7'b1111111;
+    assign HEX5 = 7'b1111111;
+
     // VGA disabled for Phase 1 to prevent un-driven pin warnings
     assign VGA_R = 8'h00;
     assign VGA_G = 8'h00;
@@ -47,11 +55,10 @@ module nes_top (
     // =========================================================================
     wire clk_25mhz;
     wire pll_locked;
-    wire pll_reset = 1'b0;
-	 
+    
     vga_pll pll_inst (
         .refclk   (CLOCK_50),
-        .rst      (pll_reset),
+        .rst      (reset),
         .outclk_0 (clk_25mhz),
         .locked   (pll_locked)
     );
@@ -61,7 +68,7 @@ module nes_top (
     
     nes_clock_generator clk_gen (
         .clk_25mhz (clk_25mhz),
-        .reset     (~pll_locked),
+        .reset     (reset),
         .cpu_ce    (cpu_ce),
         .ppu_ce    (ppu_ce)
     );
@@ -77,7 +84,7 @@ module nes_top (
     MOS_6502_CPU cpu_inst (
         .clk_25mhz (clk_25mhz),
         .cpu_ce    (cpu_ce),
-        .reset     (~pll_locked),
+        .reset     (reset),
         .address   (cpu_address),
         .data_in   (cpu_data_in),
         .data_out  (cpu_data_out),
@@ -85,6 +92,9 @@ module nes_top (
     );
 
     // Memory Map Decoding
+    // Standard NES RAM is $0000-$07FF (mirrored).
+    // For Phase 1 testing, we route the upper Cartridge ROM space ($8000+) to RAM 
+    // so we can load assembly programs into the RAM file and execute them.
     wire ram_cs = (cpu_address < 16'h2000) || (cpu_address >= 16'h8000); 
     wire ppu_cs = (cpu_address >= 16'h2000 && cpu_address <= 16'h3FFF);
 
@@ -110,6 +120,8 @@ module nes_top (
     // =========================================================================
     // 4. PPU Register Integration
     // =========================================================================
+    // Edge detector: Converts the CPU's 14-cycle wide write enable into a 
+    // single 25MHz pulse to safely trigger the synchronous PPU registers.
     reg cpu_we_last;
     always @(posedge clk_25mhz) begin
         if (reset) cpu_we_last <= 1'b0;
@@ -120,18 +132,17 @@ module nes_top (
     wire ppu_write_n = ~(cpu_write_pulse && ppu_cs);
     wire ppu_read_n  = ~(~cpu_write_en && ppu_cs);
     
+    // PPU registers are mirrored every 8 bytes across the $2000-$3FFF space
     wire [2:0] ppu_reg_addr = cpu_address[2:0];
 
+    // Dummy Cartridge CHR-ROM interface for Phase 1
     wire [13:0] chr_addr;
     wire [7:0]  chr_data_in = 8'h00;
     wire        chr_read_n;
-    
-    wire [7:0]  ppu_dbg_ctrl;
-    wire [7:0]  ppu_dbg_mask;
 
     ppu_core ppu_inst (
         .clk          (clk_25mhz),
-        .reset        (~pll_locked),
+        .reset        (reset),
         .cpu_addr     (ppu_reg_addr),
         .cpu_data_in  (cpu_data_out),
         .cpu_data_out (ppu_data_out),
@@ -139,29 +150,15 @@ module nes_top (
         .cpu_write_n  (ppu_write_n),
         .chr_addr     (chr_addr),
         .chr_data_in  (chr_data_in),
-        .chr_read_n   (chr_read_n),
-        .dbg_ctrl     (ppu_dbg_ctrl),
-        .dbg_mask     (ppu_dbg_mask)
+        .chr_read_n   (chr_read_n)
     );
 
     // =========================================================================
-    // 5. Hardware Telemetry & Debug Displays
+    // 5. Hardware Telemetry
     // =========================================================================
     assign LEDR[9] = pll_locked;
-    assign LEDR[8] = cpu_write_pulse; 
-    assign LEDR[7] = ppu_cs;          
+    assign LEDR[8] = cpu_write_pulse; // Will flash brightly when CPU writes
+    assign LEDR[7] = ppu_cs;          // Will glow when CPU talks to PPU
     assign LEDR[6:0] = 7'b0000000;
-    
-    // Turn off unused HEX displays
-    assign HEX1 = 7'b1111111;
-    assign HEX0 = 7'b1111111;
-
-    // Display PPUCTRL data (Address $2000) on HEX5 and HEX4
-    hex_decoder hex5_inst (.hex_in(ppu_dbg_ctrl[7:4]), .segments(HEX5));
-    hex_decoder hex4_inst (.hex_in(ppu_dbg_ctrl[3:0]), .segments(HEX4));
-
-    // Display PPUMASK data (Address $2001) on HEX3 and HEX2
-    hex_decoder hex3_inst (.hex_in(ppu_dbg_mask[7:4]), .segments(HEX3));
-    hex_decoder hex2_inst (.hex_in(ppu_dbg_mask[3:0]), .segments(HEX2));
 
 endmodule
