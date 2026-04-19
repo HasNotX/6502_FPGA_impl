@@ -1,5 +1,6 @@
 module cpu_fsm (
     input clk, reset,
+    input wire cpu_ce,
     input [7:0] data_in,
     input [1:0] extra_cycles_in,
     input [3:0] alu_op_in,
@@ -139,7 +140,7 @@ always @(posedge clk) begin
         s_pointer <= 8'hFD;
         write_en  <= 1'b0;
         push_data <= 8'h00;
-    end else begin
+    end else if(cpu_ce) begin  // FSM only runs when accumulator overflows (~1.79 MHz)
         case (state)
 
             // ─────────────────────────────────────────────────────────────
