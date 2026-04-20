@@ -92,8 +92,8 @@ module nes_top (
     wire [7:0]  cpu_data_out;
     wire [7:0]  cpu_data_in;
     wire        cpu_write_en;
-    wire [15:0] cpu_pc;          // NEW
-    wire [5:0]  cpu_state;       // NEW
+    wire [15:0] cpu_pc;          
+    wire [5:0]  cpu_state;       
 
     MOS_6502_CPU cpu_inst (
         .clk_25mhz     (clk_25mhz),
@@ -103,19 +103,14 @@ module nes_top (
         .data_in       (cpu_data_in),
         .data_out      (cpu_data_out),
         .write_en      (cpu_write_en),
-        .current_pc    (cpu_pc),     // NEW
-        .current_state (cpu_state)   // NEW
+        .current_pc    (cpu_pc),     
+        .current_state (cpu_state)   
     );
 
-    // KLAUS TEST OVERRIDE: Give the CPU 100% pure RAM access.
-    // Comment out the PPU multiplexer.
-    /* wire ram_cs = (cpu_address < 16'h2000) || (cpu_address >= 16'h8000); 
-    wire ppu_cs = (cpu_address >= 16'h2000 && cpu_address <= 16'h3FFF);
-    assign cpu_data_in = ppu_cs ? ppu_data_out : ram_data_out;
-    wire ram_write_en = cpu_write_en && ram_cs;
-    */
+    // FIX: Explicitly define the 8-bit wire so Verilog doesn't make it 1-bit!
+    wire [7:0] ram_data_out; 
     
-    // Direct RAM wiring for Klaus Test:
+    // Direct RAM wiring for Klaus Test
     wire ppu_cs = 1'b0;
     assign cpu_data_in = ram_data_out; 
     wire ram_write_en = cpu_write_en;

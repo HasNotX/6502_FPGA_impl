@@ -24,12 +24,12 @@
 
 module cpu_fsm (
     input clk, reset,
+	 input cpu_ce,
     input [7:0] data_in,
     input [1:0] extra_cycles_in,
     input [3:0] alu_op_in,
     input [1:0] dest_reg_in,
     input [3:0] addr_mode_in,
-	 input wire cpu_ce,
     output reg [15:0] PC,
     output reg [7:0] inst_reg, accum, X, Y, s_pointer, s_reg,
     output reg [7:0] operand_lo, operand_hi,
