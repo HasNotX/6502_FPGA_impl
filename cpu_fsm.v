@@ -29,6 +29,7 @@ module cpu_fsm (
     input [3:0] alu_op_in,
     input [1:0] dest_reg_in,
     input [3:0] addr_mode_in,
+	 input wire cpu_ce,
     output reg [15:0] PC,
     output reg [7:0] inst_reg, accum, X, Y, s_pointer, s_reg,
     output reg [7:0] operand_lo, operand_hi,
@@ -175,7 +176,7 @@ always @(posedge clk) begin
         operand_lo <= 8'h00;
         operand_hi <= 8'h00;
         inst_reg   <= 8'h00;
-    end else begin
+    end else if (cpu_ce) begin
         case (state)
 
             // ─────────────────────────────────────────────────────────────
