@@ -18,7 +18,10 @@ module MOS_6502_CPU (
     output wire [15:0] address,
     input  wire [7:0]  data_in,     // Uni-directional Read Bus
     output wire [7:0]  data_out,    // Uni-directional Write Bus
-    output wire        write_en
+    output wire        write_en,
+	 
+	 output wire [15:0] current_pc,     // Telemetry Export
+    output wire [5:0]  current_state  // Telemetry Export
 );
 
     wire [15:0] PC;
@@ -31,6 +34,10 @@ module MOS_6502_CPU (
 
     // Directly route FSM output to the external write bus
     assign data_out = push_data;
+	 
+	 // Telemtery
+	 assign current_pc = PC;
+    assign current_state = fsm_state;
 
     // ── Effective Address Generation ──────────────────────────────────────────────
     reg [15:0] eff_addr;

@@ -85,40 +85,44 @@ module nes_top (
         .ppu_ce    (ppu_ce)
     );
 
-    // =========================================================================
+	 // =========================================================================
     // 4. Main System Bus & CPU Instantiation
     // =========================================================================
     wire [15:0] cpu_address;
     wire [7:0]  cpu_data_out;
     wire [7:0]  cpu_data_in;
     wire        cpu_write_en;
+    wire [15:0] cpu_pc;          // NEW
+    wire [5:0]  cpu_state;       // NEW
 
     MOS_6502_CPU cpu_inst (
-        .clk_25mhz (clk_25mhz),
-        .cpu_ce    (cpu_ce),
-        .reset     (sys_reset),    // Uses unified reset
-        .address   (cpu_address),
-        .data_in   (cpu_data_in),
-        .data_out  (cpu_data_out),
-        .write_en  (cpu_write_en)
+        .clk_25mhz     (clk_25mhz),
+        .cpu_ce        (cpu_ce),
+        .reset         (sys_reset), 
+        .address       (cpu_address),
+        .data_in       (cpu_data_in),
+        .data_out      (cpu_data_out),
+        .write_en      (cpu_write_en),
+        .current_pc    (cpu_pc),     // NEW
+        .current_state (cpu_state)   // NEW
     );
 
-    // Memory Map Decoding
-    wire ram_cs = (cpu_address < 16'h2000) || (cpu_address >= 16'h8000); 
+    // KLAUS TEST OVERRIDE: Give the CPU 100% pure RAM access.
+    // Comment out the PPU multiplexer.
+    /* wire ram_cs = (cpu_address < 16'h2000) || (cpu_address >= 16'h8000); 
     wire ppu_cs = (cpu_address >= 16'h2000 && cpu_address <= 16'h3FFF);
-
-    // Data Multiplexer (The Router)
-    wire [7:0] ram_data_out;
-    wire [7:0] ppu_data_out;
-    
     assign cpu_data_in = ppu_cs ? ppu_data_out : ram_data_out;
-
-    // =========================================================================
-    // 5. System RAM Integration
-    // =========================================================================
     wire ram_write_en = cpu_write_en && ram_cs;
+    */
+    
+    // Direct RAM wiring for Klaus Test:
+    wire ppu_cs = 1'b0;
+    assign cpu_data_in = ram_data_out; 
+    wire ram_write_en = cpu_write_en;
 
-    ram system_ram (
+    ram #(
+        .INIT_FILE("klaus_dormann.hex")
+    ) system_ram (
         .clk      (clk_25mhz),
         .addr     (cpu_address),
         .data_in  (cpu_data_out),
@@ -168,20 +172,18 @@ module nes_top (
     // =========================================================================
     assign LEDR[9] = pll_locked;
     assign LEDR[8] = cpu_write_pulse; 
-    assign LEDR[7] = ppu_cs;          
-    assign LEDR[6:0] = 7'b0000000;
+    assign LEDR[7] = 1'b0; // PPU Disabled
+    assign LEDR[6] = 1'b0;
+    assign LEDR[5:0] = cpu_state; // FSM State on the bottom 6 LEDs
     
-    // Turn off unused HEX displays
-    assign HEX1 = 7'b1111111;
-    assign HEX0 = 7'b1111111;
+    assign HEX5 = 7'b1111111; // Off
+    assign HEX4 = 7'b1111111; // Off
 
-    // Display PPUCTRL data (Address $2000) on HEX5 and HEX4
-    hex_decoder hex5_inst (.hex_in(ppu_dbg_ctrl[7:4]), .segments(HEX5));
-    hex_decoder hex4_inst (.hex_in(ppu_dbg_ctrl[3:0]), .segments(HEX4));
-
-    // Display PPUMASK data (Address $2001) on HEX3 and HEX2
-    hex_decoder hex3_inst (.hex_in(ppu_dbg_mask[7:4]), .segments(HEX3));
-    hex_decoder hex2_inst (.hex_in(ppu_dbg_mask[3:0]), .segments(HEX2));
+    // Display the 16-bit Program Counter!
+    hex_decoder hex3_inst (.hex_in(cpu_pc[15:12]), .segments(HEX3));
+    hex_decoder hex2_inst (.hex_in(cpu_pc[11:8]),  .segments(HEX2));
+    hex_decoder hex1_inst (.hex_in(cpu_pc[7:4]),   .segments(HEX1));
+    hex_decoder hex0_inst (.hex_in(cpu_pc[3:0]),   .segments(HEX0));
 
 endmodule
 
