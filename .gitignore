@@ -1,2 +1,143 @@
+# ============================================================
+# Quartus Project .gitignore
+# ============================================================
+
+# ------------------------------------------------------------
+# Quartus Database & Compilation Output
+# ------------------------------------------------------------
 db/
+incremental_db/
 output_files/
+simulation/
+*.rdb
+*.cdb
+*.qdb
+
+# ------------------------------------------------------------
+# Quartus Generated Files
+# ------------------------------------------------------------
+*.jdi
+*.pin
+*.sof
+*.pof
+*.svf
+*.ttf
+*.rbf
+*.ekp
+*.rpd
+*.jic
+*.map
+*.summary
+*.smsg
+*.done
+*.rpt
+*.htm
+*.eqn
+*.avc
+
+# ------------------------------------------------------------
+# Timing & Compilation Reports
+# ------------------------------------------------------------
+*.sta.rpt
+*.fit.rpt
+*.asm.rpt
+*.map.rpt
+*.tan.rpt
+*.sta.summary
+*.fit.summary
+*.map.summary
+
+# ------------------------------------------------------------
+# Quartus Timing Analyzer
+# ------------------------------------------------------------
+*.qsta
+*.sdc.bak
+
+# ------------------------------------------------------------
+# Qsys / Platform Designer
+# ------------------------------------------------------------
+*.sopcinfo
+*_inst.v
+*_inst.vhd
+*_bb.v
+*.bsf
+*.cmp
+*.qip
+*.spd
+*.csv
+hps_isw_handoff/
+*.xml
+!*_qsys.xml
+
+# Qsys-generated source directories (keep only .qsys file)
+*_qsys/
+*_sys/
+
+# ------------------------------------------------------------
+# ModelSim / Questa Simulation
+# ------------------------------------------------------------
+*.wlf
+*.vcd
+*.do
+transcript
+vsim.wlf
+work/
+modelsim.ini
+
+# ------------------------------------------------------------
+# Nios II / Embedded
+# ------------------------------------------------------------
+#software/
+#*.elf
+#*.objdump
+#*.map
+#*.mem
+
+# ------------------------------------------------------------
+# Programmer / JTAG
+# ------------------------------------------------------------
+*.cdf
+*.pof
+
+# ------------------------------------------------------------
+# Quartus Settings Backups
+# ------------------------------------------------------------
+*.qsf.bak
+*.qpf.bak
+*.bak
+
+# ------------------------------------------------------------
+# OS & Editor Artifacts
+# ------------------------------------------------------------
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.fuse_hidden*
+.Trash-*
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+
+# ------------------------------------------------------------
+# Keep These (explicit overrides)
+# ------------------------------------------------------------
+# Uncomment if you use an SDC constraints file
+# !*.sdc
+
+# Uncomment to track your top-level IP catalog files
+# !*.qip

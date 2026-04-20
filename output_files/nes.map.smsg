@@ -1,1 +1,0 @@
-Warning (10268): Verilog HDL information at cpu_fsm.v(163): always construct contains both blocking and non-blocking assignments File: /home/someone/hassaan/nes/cpu_fsm.v Line: 163
