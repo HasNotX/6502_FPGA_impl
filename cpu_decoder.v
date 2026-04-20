@@ -33,8 +33,7 @@ always @(*) begin
         // NOP
         8'hEA: begin addr_mode = MODE_IMPLICIT; dest_reg = DEST_NONE; end
 
-        // BRK - Force Interrupt ($00): implied, 7 cycles
-        // extra_cycles encoding: we reuse 2'd0 but the FSM handles BRK specially
+        // BRK
         8'h00: begin addr_mode = MODE_IMPLICIT; dest_reg = DEST_NONE; end
 
         // Stack ops
@@ -140,19 +139,19 @@ always @(*) begin
         8'hA1: begin addr_mode = MODE_INDIRECT_X; extra_cycles = 2'd1; dest_reg = DEST_A; end
         8'hB1: begin addr_mode = MODE_INDIRECT_Y; extra_cycles = 2'd1; dest_reg = DEST_A; end
 
-        // LDX - all addressing modes
+        // LDX
         8'hA2: begin addr_mode = MODE_IMMEDIATE;  extra_cycles = 2'd1; dest_reg = DEST_X; end
-        8'hA6: begin addr_mode = MODE_ZEROPAGE;   extra_cycles = 2'd2; dest_reg = DEST_X; end // NEW
-        8'hB6: begin addr_mode = MODE_ZEROPAGE_Y; extra_cycles = 2'd2; dest_reg = DEST_X; end // NEW
-        8'hAE: begin addr_mode = MODE_ABSOLUTE;   extra_cycles = 2'd3; dest_reg = DEST_X; end // NEW
-        8'hBE: begin addr_mode = MODE_ABSOLUTE_Y; extra_cycles = 2'd3; dest_reg = DEST_X; end // NEW
+        8'hA6: begin addr_mode = MODE_ZEROPAGE;   extra_cycles = 2'd2; dest_reg = DEST_X; end
+        8'hB6: begin addr_mode = MODE_ZEROPAGE_Y; extra_cycles = 2'd2; dest_reg = DEST_X; end
+        8'hAE: begin addr_mode = MODE_ABSOLUTE;   extra_cycles = 2'd3; dest_reg = DEST_X; end
+        8'hBE: begin addr_mode = MODE_ABSOLUTE_Y; extra_cycles = 2'd3; dest_reg = DEST_X; end
 
-        // LDY - all addressing modes
+        // LDY
         8'hA0: begin addr_mode = MODE_IMMEDIATE;  extra_cycles = 2'd1; dest_reg = DEST_Y; end
-        8'hA4: begin addr_mode = MODE_ZEROPAGE;   extra_cycles = 2'd2; dest_reg = DEST_Y; end // NEW
-        8'hB4: begin addr_mode = MODE_ZEROPAGE_X; extra_cycles = 2'd2; dest_reg = DEST_Y; end // NEW
-        8'hAC: begin addr_mode = MODE_ABSOLUTE;   extra_cycles = 2'd3; dest_reg = DEST_Y; end // NEW
-        8'hBC: begin addr_mode = MODE_ABSOLUTE_X; extra_cycles = 2'd3; dest_reg = DEST_Y; end // NEW
+        8'hA4: begin addr_mode = MODE_ZEROPAGE;   extra_cycles = 2'd2; dest_reg = DEST_Y; end
+        8'hB4: begin addr_mode = MODE_ZEROPAGE_X; extra_cycles = 2'd2; dest_reg = DEST_Y; end
+        8'hAC: begin addr_mode = MODE_ABSOLUTE;   extra_cycles = 2'd3; dest_reg = DEST_Y; end
+        8'hBC: begin addr_mode = MODE_ABSOLUTE_X; extra_cycles = 2'd3; dest_reg = DEST_Y; end
 
         // Register Transfers
         8'hAA: begin addr_mode = MODE_IMPLICIT; dest_reg = DEST_X; end

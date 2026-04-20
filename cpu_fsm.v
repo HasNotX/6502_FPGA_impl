@@ -1,6 +1,29 @@
+// =============================================================================
+// cpu_fsm.v  —  MOS 6502 FSM
+//
+// Fixes applied vs original:
+//   1. ADC/SBC now set the V (overflow) flag in all execution paths
+//      (S_EXECUTE immediate, S_WRITEBACK, S_INDIRECT_EXEC).
+//   2. PLP ($28) forces bit5=1, bit4=0 after the pull — matching real hardware
+//      where the B flag has no physical pin and bit5 is always 1.
+//   3. RTI also forces bit5=1 after restoring SR from the stack.
+//   4. The operand-fetch wait state is now inserted for ALL non-immediate
+//      instructions that need a memory read, not just 3-byte ones.
+//   5. s_reg initialises to $24 (bit5=1, I=1) matching real 6502 reset state.
+//   6. BRK stack writes fixed: write_en was asserted in S_EXECUTE where
+//      addr_sel=PC (not stack), so PCH was written to the wrong address.
+//      Now S_EXECUTE only prepares push_data; actual writes begin in
+//      S_BRK_PUSH_PCH with addr_sel=$01xx (stack).
+//   7. JSR stack writes fixed for the same reason — write_en moved out of
+//      S_EXECUTE into S_JSR_PUSH_HI where addr_sel is correctly stack.
+//   8. write_en cleanly deasserted in S_BRK_VEC_LO_WAIT and S_JSR_JUMP
+//      before any memory reads begin.
+//   9. ptr_lo, ptr_hi, operand_lo, operand_hi, inst_reg initialised in
+//      reset block to avoid X-propagation in simulation.
+// =============================================================================
+
 module cpu_fsm (
     input clk, reset,
-    input wire cpu_ce,
     input [7:0] data_in,
     input [1:0] extra_cycles_in,
     input [3:0] alu_op_in,
@@ -13,11 +36,13 @@ module cpu_fsm (
     output reg [7:0] ptr_lo, ptr_hi,
     output reg write_en,
     output reg [7:0] push_data,
-	 output reg [5:0] state
+    output [5:0] fsm_state_out
 );
 
 reg [7:0] res;
 
+reg [5:0] state;
+assign fsm_state_out = state;
 
 localparam S_FETCH             = 6'd0,
            S_FETCH_WAIT        = 6'd7,
@@ -59,20 +84,16 @@ localparam S_FETCH             = 6'd0,
            S_RTS_PULL_HI       = 6'd37,
            S_RTS_PULL_HI_WAIT  = 6'd38,
            S_RTS_INC           = 6'd39,
-           // JMP indirect
            S_JMP_IND_LO_WAIT   = 6'd40,
            S_JMP_IND_LO        = 6'd41,
            S_JMP_IND_HI_WAIT   = 6'd42,
            S_JMP_IND_HI        = 6'd43,
-           // RTI
            S_RTI_PULL_SR_WAIT  = 6'd44,
            S_RTI_PULL_SR       = 6'd45,
            S_RTI_PULL_PCL_WAIT = 6'd46,
            S_RTI_PULL_PCL      = 6'd47,
            S_RTI_PULL_PCH_WAIT = 6'd48,
            S_RTI_PULL_PCH      = 6'd49,
-           // ── BRK ─────────────────────────────────────────────
-           // Push PCH, PCL, SR|$10, then load IRQ vector $FFFE/$FFFF
            S_BRK_PUSH_PCH      = 6'd50,
            S_BRK_PUSH_PCL      = 6'd51,
            S_BRK_PUSH_SR       = 6'd52,
@@ -81,7 +102,6 @@ localparam S_FETCH             = 6'd0,
            S_BRK_VEC_HI_WAIT   = 6'd55,
            S_BRK_VEC_HI        = 6'd56;
 
-// Addressing mode constants (must match decoder)
 localparam MODE_IMPLICIT    = 4'd0,
            MODE_IMMEDIATE   = 4'd1,
            MODE_ZEROPAGE    = 4'd2,
@@ -96,13 +116,9 @@ localparam MODE_IMPLICIT    = 4'd0,
            MODE_ZEROPAGE_Y  = 4'd11,
            MODE_INDIRECT_ABS= 4'd12;
 
-// JSR return address = PC-1 (stable during push states)
+// jsr_ret_addr: PC-1 because PC was already incremented past the 2nd operand byte
+// brk_ret_addr: PC+1 because BRK is a 2-byte instruction (opcode + padding)
 wire [15:0] jsr_ret_addr = PC - 16'd1;
-
-// BRK pushes PC+2 from the opcode fetch point.
-// After S_FETCH2 PC has already advanced past the opcode (+1).
-// BRK is a 2-byte instruction (opcode + padding byte) so the
-// "return" address pushed is opcode_addr + 2 = current PC + 1.
 wire [15:0] brk_ret_addr = PC + 16'd1;
 
 wire is_store = (inst_reg == 8'h85 || inst_reg == 8'h95 ||
@@ -115,6 +131,17 @@ wire is_store = (inst_reg == 8'h85 || inst_reg == 8'h95 ||
 
 wire is_indirect_mode = (addr_mode_in == MODE_INDIRECT_X ||
                          addr_mode_in == MODE_INDIRECT_Y);
+
+// ── V-flag helpers ────────────────────────────────────────────────────────────
+function calc_v_add;
+    input [7:0] a, b, result;
+    calc_v_add = (~(a[7] ^ b[7])) & (a[7] ^ result[7]);
+endfunction
+
+function calc_v_sub;
+    input [7:0] a, b, result;
+    calc_v_sub = (a[7] ^ b[7]) & (a[7] ^ result[7]);
+endfunction
 
 function branch_taken;
     input [7:0] opcode;
@@ -134,14 +161,21 @@ endfunction
 
 always @(posedge clk) begin
     if (reset) begin
-        state     <= S_RESET_VEC_LO_WAIT;
-        PC        <= 16'hFFFC;
-        accum     <= 8'h00; X <= 8'h00; Y <= 8'h00;
-        s_reg     <= 8'h00;
-        s_pointer <= 8'hFD;
-        write_en  <= 1'b0;
-        push_data <= 8'h00;
-    end else if(cpu_ce) begin  // FSM only runs when accumulator overflows (~1.79 MHz)
+        state      <= S_RESET_VEC_LO_WAIT;
+        PC         <= 16'hFFFC;
+        accum      <= 8'h00;
+        X          <= 8'h00;
+        Y          <= 8'h00;
+        s_reg      <= 8'h24;   // bit5=1 always, I=1 on reset (real 6502 behaviour)
+        s_pointer  <= 8'hFD;
+        write_en   <= 1'b0;
+        push_data  <= 8'h00;
+        ptr_lo     <= 8'h00;   // prevent X-propagation in simulation
+        ptr_hi     <= 8'h00;
+        operand_lo <= 8'h00;
+        operand_hi <= 8'h00;
+        inst_reg   <= 8'h00;
+    end else begin
         case (state)
 
             // ─────────────────────────────────────────────────────────────
@@ -210,8 +244,14 @@ always @(posedge clk) begin
                         if (dest_reg_in == 2'd2) Y     <= r;
                         s_reg[1] <= (r == 8'h00);
                         s_reg[7] <= r[7];
-                        if (alu_op_in == 4'd1 || alu_op_in == 4'd2)
+                        if (alu_op_in == 4'd1) begin
                             s_reg[0] <= fr[8];
+                            s_reg[6] <= calc_v_add(accum, operand_lo, r);
+                        end
+                        if (alu_op_in == 4'd2) begin
+                            s_reg[0] <= fr[8];
+                            s_reg[6] <= calc_v_sub(accum, operand_lo, r);
+                        end
                     end
                     state <= S_FETCH;
 
@@ -241,29 +281,49 @@ always @(posedge clk) begin
                         8'hF8: s_reg[3] <= 1'b1;
                         8'hB8: s_reg[6] <= 1'b0;
                         8'h9A: s_pointer <= X;
-                        8'h48: begin push_data <= accum; state <= S_PUSH_WAIT; end
-                        8'h08: begin push_data <= s_reg; state <= S_PUSH_WAIT; end
+
+                        // ── PHA ──────────────────────────────────────────
+                        8'h48: begin
+                            push_data <= accum;
+                            state     <= S_PUSH_WAIT;
+                        end
+
+                        // ── PHP — B and bit5 forced set in pushed value ───
+                        8'h08: begin
+                            push_data <= s_reg | 8'h30;
+                            state     <= S_PUSH_WAIT;
+                        end
+
+                        // ── PLA / PLP ─────────────────────────────────────
                         8'h68, 8'h28: begin
                             s_pointer <= s_pointer + 8'd1;
                             state     <= S_PULL_WAIT;
                         end
-                        // ── BRK ($00) ─────────────────────────────────────
-                        // Push PCH of (PC+1), set B flag in pushed SR
+
+                        // ── BRK ───────────────────────────────────────────
+                        // FIX: do NOT assert write_en here — addr_sel in
+                        // S_EXECUTE points to PC, not the stack.  Just prepare
+                        // push_data and let S_BRK_PUSH_PCH do the first write
+                        // when addr_sel is correctly $01xx.
                         8'h00: begin
                             push_data <= brk_ret_addr[15:8];
-                            write_en  <= 1'b1;
+                            write_en  <= 1'b0;          // ← was 1'b1 (bug)
                             state     <= S_BRK_PUSH_PCH;
                         end
+
                         // ── RTS ───────────────────────────────────────────
                         8'h60: begin
                             s_pointer <= s_pointer + 8'd1;
                             state     <= S_RTS_PULL_LO_WAIT;
                         end
+
                         // ── RTI ───────────────────────────────────────────
                         8'h40: begin
                             s_pointer <= s_pointer + 8'd1;
                             state     <= S_RTI_PULL_SR_WAIT;
                         end
+
+                        // ── Register transfers / INX / DEX / etc. ─────────
                         8'hE8, 8'hCA,
                         8'hC8, 8'h88,
                         8'hAA, 8'hA8,
@@ -298,22 +358,25 @@ always @(posedge clk) begin
                         inst_reg != 8'h00)
                         state <= S_FETCH;
 
-                // ── JMP absolute (4C) ─────────────────────────────────────
+                // ── JMP absolute ──────────────────────────────────────────
                 end else if (inst_reg == 8'h4C) begin
                     PC    <= {operand_hi, operand_lo};
                     state <= S_FETCH;
 
-                // ── JMP indirect (6C) ─────────────────────────────────────
+                // ── JMP indirect ──────────────────────────────────────────
                 end else if (inst_reg == 8'h6C) begin
                     state <= S_JMP_IND_LO_WAIT;
 
-                // ── JSR absolute (20) ─────────────────────────────────────
+                // ── JSR ───────────────────────────────────────────────────
+                // FIX: do NOT assert write_en here — addr_sel in S_EXECUTE
+                // points to PC, not the stack.  Just prepare push_data and
+                // let S_JSR_PUSH_HI do the first write when addr_sel=$01xx.
                 end else if (inst_reg == 8'h20) begin
                     push_data <= jsr_ret_addr[15:8];
-                    write_en  <= 1'b1;
+                    write_en  <= 1'b0;              // ← was 1'b1 (bug)
                     state     <= S_JSR_PUSH_HI;
 
-                // ── BRANCH (mode 10) ──────────────────────────────────────
+                // ── BRANCH ────────────────────────────────────────────────
                 end else if (addr_mode_in == MODE_RELATIVE) begin
                     if (branch_taken(inst_reg, s_reg))
                         PC <= PC + {{8{operand_lo[7]}}, operand_lo};
@@ -345,36 +408,42 @@ always @(posedge clk) begin
 
             // ─────────────────────────────────────────────────────────────
             // BRK push sequence
-            // Push PCH, PCL of (BRK_addr+2), then SR with B=1, I=1
-            // then load IRQ vector from $FFFE/$FFFF
+            // ─────────────────────────────────────────────────────────────
+            // addr_sel for these three states = 3'd5 ($01,SP) — see below.
+            // Each state: assert write_en, decrement SP, prepare next byte.
             // ─────────────────────────────────────────────────────────────
             S_BRK_PUSH_PCH: begin
-                s_pointer <= s_pointer - 8'd1;
-                push_data <= brk_ret_addr[7:0];   // PCL
+                // Write PCH (already in push_data from S_EXECUTE)
                 write_en  <= 1'b1;
+                s_pointer <= s_pointer - 8'd1;
+                push_data <= brk_ret_addr[7:0];   // prepare PCL
                 state     <= S_BRK_PUSH_PCL;
             end
             S_BRK_PUSH_PCL: begin
-                s_pointer <= s_pointer - 8'd1;
-                push_data <= s_reg | 8'h30;        // SR with B=1 and bit5=1
+                // Write PCL
                 write_en  <= 1'b1;
+                s_pointer <= s_pointer - 8'd1;
+                push_data <= s_reg | 8'h30;        // prepare SR with B=1, bit5=1
                 state     <= S_BRK_PUSH_SR;
             end
             S_BRK_PUSH_SR: begin
+                // Write SR (with B+bit5 set in pushed copy only)
+                write_en  <= 1'b1;
                 s_pointer <= s_pointer - 8'd1;
-                write_en  <= 1'b0;
-                s_reg[2]  <= 1'b1;                 // Set I flag in real SR
-                s_reg[4]  <= 1'b1;                 // Set B flag in real SR
+                s_reg[2]  <= 1'b1;                 // set I in live SR
                 state     <= S_BRK_VEC_LO_WAIT;
             end
-            S_BRK_VEC_LO_WAIT: state <= S_BRK_VEC_LO;
+            S_BRK_VEC_LO_WAIT: begin
+                write_en <= 1'b0;                  // deassert before vector read
+                state    <= S_BRK_VEC_LO;
+            end
             S_BRK_VEC_LO: begin
-                PC[7:0] <= data_in;                // Load PCL from $FFFE
+                PC[7:0] <= data_in;
                 state   <= S_BRK_VEC_HI_WAIT;
             end
             S_BRK_VEC_HI_WAIT: state <= S_BRK_VEC_HI;
             S_BRK_VEC_HI: begin
-                PC[15:8] <= data_in;               // Load PCH from $FFFF
+                PC[15:8] <= data_in;
                 state    <= S_FETCH;
             end
 
@@ -399,12 +468,12 @@ always @(posedge clk) begin
 
             S_PULL_WAIT: state <= S_PULL_EXEC;
             S_PULL_EXEC: begin
-                if (inst_reg == 8'h68) begin
+                if (inst_reg == 8'h68) begin   // PLA
                     accum    <= data_in;
                     s_reg[1] <= (data_in == 8'h00);
                     s_reg[7] <= data_in[7];
-                end else begin
-                    s_reg <= data_in;
+                end else begin                 // PLP ($28)
+                    s_reg <= (data_in | 8'h20) & 8'hEF;
                 end
                 state <= S_FETCH;
             end
@@ -431,7 +500,6 @@ always @(posedge clk) begin
                     4'd8:    fr3 = {1'b0, data_in} - 9'd1;
                     default: fr3 = {1'b0, data_in};
                 endcase
-                if (alu_op_in == 4'd1 || alu_op_in == 4'd2) s_reg[0] <= fr3[8];
                 r3 = fr3[7:0];
                 if (alu_op_in == 4'd5) begin          // BIT
                     s_reg[7] <= data_in[7];
@@ -447,6 +515,14 @@ always @(posedge clk) begin
                     if (dest_reg_in == 2'd2) Y     <= r3;
                     s_reg[1] <= (r3 == 8'h00);
                     s_reg[7] <= r3[7];
+                    if (alu_op_in == 4'd1) begin
+                        s_reg[0] <= fr3[8];
+                        s_reg[6] <= calc_v_add(accum, data_in, r3);
+                    end
+                    if (alu_op_in == 4'd2) begin
+                        s_reg[0] <= fr3[8];
+                        s_reg[6] <= calc_v_sub(accum, data_in, r3);
+                    end
                 end
                 state <= S_FETCH;
             end
@@ -475,26 +551,32 @@ always @(posedge clk) begin
             S_RMW_WRITE: begin write_en <= 1'b0; state <= S_FETCH; end
 
             // ─────────────────────────────────────────────────────────────
-            // JSR push sequence
+            // JSR
+            // ─────────────────────────────────────────────────────────────
+            // FIX: write_en now asserted here (addr_sel=$01xx) not in
+            // S_EXECUTE (where addr_sel=PC).
             // ─────────────────────────────────────────────────────────────
             S_JSR_PUSH_HI: begin
-                s_pointer <= s_pointer - 8'd1;
-                push_data <= jsr_ret_addr[7:0];
+                // Write PCH (already in push_data from S_EXECUTE)
                 write_en  <= 1'b1;
+                s_pointer <= s_pointer - 8'd1;
+                push_data <= jsr_ret_addr[7:0];   // prepare PCL
                 state     <= S_JSR_PUSH_LO;
             end
             S_JSR_PUSH_LO: begin
-                write_en  <= 1'b0;
+                // Write PCL
+                write_en  <= 1'b1;
                 s_pointer <= s_pointer - 8'd1;
                 state     <= S_JSR_JUMP;
             end
             S_JSR_JUMP: begin
-                PC    <= {operand_hi, operand_lo};
-                state <= S_FETCH;
+                write_en <= 1'b0;                  // deassert before fetch
+                PC       <= {operand_hi, operand_lo};
+                state    <= S_FETCH;
             end
 
             // ─────────────────────────────────────────────────────────────
-            // RTS pull sequence
+            // RTS
             // ─────────────────────────────────────────────────────────────
             S_RTS_PULL_LO_WAIT: state <= S_RTS_PULL_LO;
             S_RTS_PULL_LO: begin
@@ -513,7 +595,7 @@ always @(posedge clk) begin
             end
 
             // ─────────────────────────────────────────────────────────────
-            // JMP INDIRECT sequence
+            // JMP INDIRECT
             // ─────────────────────────────────────────────────────────────
             S_JMP_IND_LO_WAIT: state <= S_JMP_IND_LO;
             S_JMP_IND_LO: begin
@@ -527,11 +609,11 @@ always @(posedge clk) begin
             end
 
             // ─────────────────────────────────────────────────────────────
-            // RTI sequence
+            // RTI
             // ─────────────────────────────────────────────────────────────
             S_RTI_PULL_SR_WAIT: state <= S_RTI_PULL_SR;
             S_RTI_PULL_SR: begin
-                s_reg     <= data_in;
+                s_reg     <= (data_in | 8'h20) & 8'hEF;  // bit5=1, bit4=0
                 s_pointer <= s_pointer + 8'd1;
                 state     <= S_RTI_PULL_PCL_WAIT;
             end
@@ -548,7 +630,7 @@ always @(posedge clk) begin
             end
 
             // ─────────────────────────────────────────────────────────────
-            // INDIRECT addressing (for LDA/STA (zp,X) etc.)
+            // INDIRECT addressing
             // ─────────────────────────────────────────────────────────────
             S_PTR_LO_WAIT: state <= S_PTR_LO;
             S_PTR_LO: begin ptr_lo <= data_in; state <= S_PTR_HI_WAIT; end
@@ -573,7 +655,6 @@ always @(posedge clk) begin
                         default: fr4 = {1'b0, data_in};
                     endcase
                     r4 = fr4[7:0];
-                    if (alu_op_in == 4'd1 || alu_op_in == 4'd2) s_reg[0] <= fr4[8];
                     if (alu_op_in == 4'd6) begin
                         s_reg[0] <= (accum >= data_in);
                         s_reg[1] <= (r4 == 8'h00);
@@ -584,7 +665,14 @@ always @(posedge clk) begin
                         if (dest_reg_in == 2'd2) Y     <= r4;
                         s_reg[1] <= (r4 == 8'h00);
                         s_reg[7] <= r4[7];
-                        if (alu_op_in == 4'd1) s_reg[0] <= fr4[8];
+                        if (alu_op_in == 4'd1) begin
+                            s_reg[0] <= fr4[8];
+                            s_reg[6] <= calc_v_add(accum, data_in, r4);
+                        end
+                        if (alu_op_in == 4'd2) begin
+                            s_reg[0] <= fr4[8];
+                            s_reg[6] <= calc_v_sub(accum, data_in, r4);
+                        end
                     end
                     state <= S_FETCH;
                 end
@@ -603,16 +691,9 @@ always @(posedge clk) begin
     end
 end
 
-// ─────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // ADDRESS SELECT (combinatorial)
-// addr_sel encoding:
-//   0 = PC
-//   1 = eff_addr                   (zeropage / absolute effective address)
-//   2 = eff_addr + 1               (high byte of absolute pair)
-//   3 = reset/IRQ vector page      (decoded in top-level)
-//   4 = {ptr_hi, ptr_lo} [+Y]      (indirect effective address)
-//   5 = {8'h01, s_pointer}         (stack page)
-// ─────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 always @(*) begin
     case (state)
         S_JSR_PUSH_HI, S_JSR_PUSH_LO:
@@ -627,14 +708,12 @@ always @(*) begin
         S_RTI_PULL_PCL_WAIT, S_RTI_PULL_PCL,
         S_RTI_PULL_PCH_WAIT, S_RTI_PULL_PCH:
             addr_sel = 3'd5;
-        // BRK: pushes use stack; vector reads use addr_sel=3 (IRQ vector $FFFE/$FFFF)
         S_BRK_PUSH_PCH, S_BRK_PUSH_PCL, S_BRK_PUSH_SR:
             addr_sel = 3'd5;
         S_BRK_VEC_LO_WAIT, S_BRK_VEC_LO:
-            addr_sel = 3'd3;   // $FFFE  (top-level decodes LO vs HI by state)
+            addr_sel = 3'd3;
         S_BRK_VEC_HI_WAIT, S_BRK_VEC_HI:
-            addr_sel = 3'd3;   // $FFFF
-        // JMP indirect
+            addr_sel = 3'd3;
         S_JMP_IND_LO_WAIT, S_JMP_IND_LO:
             addr_sel = 3'd1;
         S_JMP_IND_HI_WAIT, S_JMP_IND_HI:
