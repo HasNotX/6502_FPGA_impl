@@ -1,12 +1,12 @@
-Fitter Status : Successful - Mon Apr 20 01:10:26 2026
+Fitter Status : Successful - Mon Apr 20 01:21:02 2026
 Quartus Prime Version : 25.1std.0 Build 1129 10/21/2025 SC Lite Edition
 Revision Name : nes
 Top-level Entity Name : nes_top
 Family : Cyclone V
 Device : 5CSXFC6D6F31C6
 Timing Models : Final
-Logic utilization (in ALMs) : 707 / 41,910 ( 2 % )
-Total registers : 182
+Logic utilization (in ALMs) : 710 / 41,910 ( 2 % )
+Total registers : 217
 Total pins : 96 / 499 ( 19 % )
 Total virtual pins : 0
 Total block memory bits : 524,288 / 5,662,720 ( 9 % )

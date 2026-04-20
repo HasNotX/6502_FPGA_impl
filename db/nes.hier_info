@@ -3,7 +3,7 @@ CLOCK_50 => CLOCK_50.IN1
 KEY[0] => ~NO_FANOUT~
 KEY[1] => ~NO_FANOUT~
 KEY[2] => ~NO_FANOUT~
-KEY[3] => cpu_we_last.OUTPUTSELECT
+KEY[3] => raw_reset_btn.IN1
 SW[0] => ~NO_FANOUT~
 SW[1] => ~NO_FANOUT~
 SW[2] => ~NO_FANOUT~
@@ -281,6 +281,34 @@ extclk_out[0] <= <GND>
 extclk_out[1] <= <GND>
 cascade_out[0] <= <GND>
 zdbfbclk <> <GND>
+
+
+|nes_top|button_debouncer:btn_db_inst
+clk => button_out~reg0.CLK
+clk => counter[0].CLK
+clk => counter[1].CLK
+clk => counter[2].CLK
+clk => counter[3].CLK
+clk => counter[4].CLK
+clk => counter[5].CLK
+clk => counter[6].CLK
+clk => counter[7].CLK
+clk => counter[8].CLK
+clk => counter[9].CLK
+clk => counter[10].CLK
+clk => counter[11].CLK
+clk => counter[12].CLK
+clk => counter[13].CLK
+clk => counter[14].CLK
+clk => counter[15].CLK
+clk => counter[16].CLK
+clk => counter[17].CLK
+clk => counter[18].CLK
+clk => counter[19].CLK
+clk => sync_1.CLK
+clk => sync_0.CLK
+button_in => sync_0.DATAIN
+button_out <= button_out~reg0.DB_MAX_OUTPUT_PORT_TYPE
 
 
 |nes_top|nes_clock_generator:clk_gen

@@ -3,6 +3,7 @@
  * Description: Top-level integration module for the NES architecture.
  * Connects the 6502 CPU, Ricoh 2C02 PPU Registers, System RAM, and 
  * handles the System Bus arbitration and address decoding.
+ * Includes a robust, debounced global reset architecture.
  */
 
 module nes_top (
@@ -30,8 +31,6 @@ module nes_top (
     output wire        VGA_CLK
 );
 
-    wire reset = ~KEY[3]; // Active high reset
-    
     // VGA disabled for Phase 1 to prevent un-driven pin warnings
     assign VGA_R = 8'h00;
     assign VGA_G = 8'h00;
@@ -47,27 +46,47 @@ module nes_top (
     // =========================================================================
     wire clk_25mhz;
     wire pll_locked;
-    wire pll_reset = 1'b0;
-	 
+    
     vga_pll pll_inst (
         .refclk   (CLOCK_50),
-        .rst      (pll_reset),
+        .rst      (1'b0),          // THE FIX: The PLL is never reset by the user
         .outclk_0 (clk_25mhz),
         .locked   (pll_locked)
     );
 
+    // =========================================================================
+    // 2. Global Reset Architecture
+    // =========================================================================
+    wire raw_reset_btn = ~KEY[3];  // Active high physical button press
+    wire clean_reset_btn;
+    
+    // Debounce the physical button against the 25MHz clock
+    button_debouncer btn_db_inst (
+        .clk        (clk_25mhz),
+        .button_in  (raw_reset_btn),
+        .button_out (clean_reset_btn)
+    );
+
+    // Unified System Reset:
+    // The system is held in reset IF the PLL is currently unstable OR the user 
+    // is holding the physical reset button.
+    wire sys_reset = (~pll_locked) | clean_reset_btn;
+
+    // =========================================================================
+    // 3. System Clocks & Timing
+    // =========================================================================
     wire cpu_ce;
     wire ppu_ce;
     
     nes_clock_generator clk_gen (
         .clk_25mhz (clk_25mhz),
-        .reset     (~pll_locked),
+        .reset     (sys_reset),    // Uses unified reset
         .cpu_ce    (cpu_ce),
         .ppu_ce    (ppu_ce)
     );
 
     // =========================================================================
-    // 2. Main System Bus & CPU Instantiation
+    // 4. Main System Bus & CPU Instantiation
     // =========================================================================
     wire [15:0] cpu_address;
     wire [7:0]  cpu_data_out;
@@ -77,7 +96,7 @@ module nes_top (
     MOS_6502_CPU cpu_inst (
         .clk_25mhz (clk_25mhz),
         .cpu_ce    (cpu_ce),
-        .reset     (~pll_locked),
+        .reset     (sys_reset),    // Uses unified reset
         .address   (cpu_address),
         .data_in   (cpu_data_in),
         .data_out  (cpu_data_out),
@@ -95,7 +114,7 @@ module nes_top (
     assign cpu_data_in = ppu_cs ? ppu_data_out : ram_data_out;
 
     // =========================================================================
-    // 3. System RAM Integration
+    // 5. System RAM Integration
     // =========================================================================
     wire ram_write_en = cpu_write_en && ram_cs;
 
@@ -108,12 +127,12 @@ module nes_top (
     );
 
     // =========================================================================
-    // 4. PPU Register Integration
+    // 6. PPU Register Integration
     // =========================================================================
     reg cpu_we_last;
     always @(posedge clk_25mhz) begin
-        if (reset) cpu_we_last <= 1'b0;
-        else       cpu_we_last <= cpu_write_en;
+        if (sys_reset) cpu_we_last <= 1'b0;
+        else           cpu_we_last <= cpu_write_en;
     end
     wire cpu_write_pulse = cpu_write_en && !cpu_we_last;
 
@@ -131,7 +150,7 @@ module nes_top (
 
     ppu_core ppu_inst (
         .clk          (clk_25mhz),
-        .reset        (~pll_locked),
+        .reset        (sys_reset), // Uses unified reset
         .cpu_addr     (ppu_reg_addr),
         .cpu_data_in  (cpu_data_out),
         .cpu_data_out (ppu_data_out),
@@ -145,7 +164,7 @@ module nes_top (
     );
 
     // =========================================================================
-    // 5. Hardware Telemetry & Debug Displays
+    // 7. Hardware Telemetry & Debug Displays
     // =========================================================================
     assign LEDR[9] = pll_locked;
     assign LEDR[8] = cpu_write_pulse; 
@@ -164,4 +183,42 @@ module nes_top (
     hex_decoder hex3_inst (.hex_in(ppu_dbg_mask[7:4]), .segments(HEX3));
     hex_decoder hex2_inst (.hex_in(ppu_dbg_mask[3:0]), .segments(HEX2));
 
+endmodule
+
+
+// =============================================================================
+// Sub-Module: Synchronous Button Debouncer
+// =============================================================================
+module button_debouncer (
+    input  wire clk,
+    input  wire button_in,
+    output reg  button_out
+);
+    // 20-bit counter at 25MHz = ~41 milliseconds of required stability
+    reg [19:0] counter; 
+    
+    // Dual flip-flop synchronizer to prevent metastability from the physical world
+    reg sync_0;
+    reg sync_1;
+
+    always @(posedge clk) begin
+        // Shift data into the synchronizer
+        sync_0 <= button_in;
+        sync_1 <= sync_0;
+
+        if (sync_1 == button_out) begin
+            // The button state matches our output, nothing to do
+            counter <= 20'd0;
+        end else begin
+            // The button state has changed, start verifying it
+            counter <= counter + 1'b1;
+            
+            if (counter == 20'hFFFFF) begin
+                // The new state has been completely stable for 41ms. 
+                // It is a legitimate press/release, not a mechanical bounce.
+                button_out <= sync_1;
+                counter <= 20'd0;
+            end
+        end
+    end
 endmodule
