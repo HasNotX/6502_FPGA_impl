@@ -9,7 +9,7 @@ module video_subsystem_top (
     input  wire        cpu_read_n,
     input  wire        cpu_write_n,
     
-    // NEW: Cartridge CHR-ROM Bus
+    // Cartridge CHR-ROM Bus
     output wire [13:0] chr_addr,
     input  wire [7:0]  chr_data_in,
     output wire        chr_read_n,
@@ -55,6 +55,13 @@ module video_subsystem_top (
 
     wire is_rendering = nes_visible && dbg_mask[3];
 
+    // =========================================================================
+    // NEW: VBlank Edge Pulse Generator
+    // =========================================================================
+    reg last_nes_visible;
+    always @(posedge clk_25mhz) last_nes_visible <= nes_visible;
+    wire vblank_pulse = !nes_visible && last_nes_visible;
+
     ppu_bg_render bg_render (
         .clk             (clk_25mhz),
         .reset           (reset),
@@ -73,14 +80,15 @@ module video_subsystem_top (
     ppu_core ppu_inst (
         .clk              (clk_25mhz), 
         .reset            (reset),
+        .vblank_pulse     (vblank_pulse),  // NEW: Plumbed to PPU Core
         .cpu_addr         (cpu_addr),
         .cpu_data_in      (cpu_data_in),
         .cpu_data_out     (cpu_data_out),
         .cpu_read_n       (cpu_read_n),
         .cpu_write_n      (cpu_write_n),
-        .chr_addr         (chr_addr),      // Passes straight to motherboard
-        .chr_data_in      (chr_data_in),   // Incoming from chr_rom
-        .chr_read_n       (chr_read_n),    // Passes straight to motherboard
+        .chr_addr         (chr_addr),
+        .chr_data_in      (chr_data_in),
+        .chr_read_n       (chr_read_n),
         .dbg_ctrl         (dbg_ctrl),
         .dbg_mask         (dbg_mask),
         .nes_visible      (is_rendering),
