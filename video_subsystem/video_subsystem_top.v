@@ -2,19 +2,16 @@ module video_subsystem_top (
     input  wire        clk_25mhz,
     input  wire        reset,
 
-    // CPU Bus
     input  wire [2:0]  cpu_addr,
     input  wire [7:0]  cpu_data_in,
     output wire [7:0]  cpu_data_out,
     input  wire        cpu_read_n,
     input  wire        cpu_write_n,
     
-    // Cartridge CHR-ROM Bus
     output wire [13:0] chr_addr,
     input  wire [7:0]  chr_data_in,
     output wire        chr_read_n,
 
-    // VGA Output
     output wire [7:0]  vga_r,
     output wire [7:0]  vga_g,
     output wire [7:0]  vga_b,
@@ -24,13 +21,12 @@ module video_subsystem_top (
     output wire        vga_sync_n,
     output wire        vga_clk,
     
-    // Telemetry
     output wire [7:0]  dbg_ctrl,
     output wire [7:0]  dbg_mask,
     output wire [14:0] dbg_vram_addr,
     output wire [7:0]  dbg_palette_00,
     output wire [7:0]  dbg_nt_latch,
-    output wire nmi_out
+    output wire        nmi_out
 );
 
     wire [7:0] nes_x, nes_y;
@@ -57,7 +53,7 @@ module video_subsystem_top (
     wire is_rendering = nes_visible && dbg_mask[3];
 
     // =========================================================================
-    // NEW: VBlank Edge Pulse Generator
+    // NEW: PPU Hardware Event Pulses
     // =========================================================================
     reg last_nes_visible;
     reg [7:0] last_nes_y;
@@ -66,9 +62,14 @@ module video_subsystem_top (
         last_nes_y       <= nes_y;
     end
 
-    // Use last_nes_y! When the beam shuts off, we check if we just finished row 239.
-    // Bug Fix By Hassaan: Only pulse when the beam drops at the end of the very last scanline (239)
-    wire vblank_pulse = !nes_visible && last_nes_visible && (last_nes_y == 8'd239);
+    // Fire VBlank at the end of the last visible scanline (239)
+    wire vblank_pulse       = !nes_visible && last_nes_visible && (last_nes_y == 8'd239);
+    
+    // Clear flags at the start of the first visible scanline (0)
+    wire clear_vblank_pulse = nes_visible && !last_nes_visible && (nes_y == 8'd0);
+    
+    // Fake Sprite 0 Hit: Fire at scanline 30, X coordinate 64 (Near the coin icon)
+    wire sprite0_hit_pulse  = nes_visible && (nes_y == 8'd30) && (nes_x == 8'd64);
 
     ppu_bg_render bg_render (
         .clk             (clk_25mhz),
@@ -86,27 +87,29 @@ module video_subsystem_top (
     wire [7:0] nes_color_code;
 
     ppu_core ppu_inst (
-        .clk              (clk_25mhz), 
-        .reset            (reset),
-        .vblank_pulse     (vblank_pulse),  // NEW: Plumbed to PPU Core
-        .cpu_addr         (cpu_addr),
-        .cpu_data_in      (cpu_data_in),
-        .cpu_data_out     (cpu_data_out),
-        .cpu_read_n       (cpu_read_n),
-        .cpu_write_n      (cpu_write_n),
-        .chr_addr         (chr_addr),
-        .chr_data_in      (chr_data_in),
-        .chr_read_n       (chr_read_n),
-        .dbg_ctrl         (dbg_ctrl),
-        .dbg_mask         (dbg_mask),
-        .nes_visible      (is_rendering),
-        .bg_mem_addr      (bg_mem_addr),
-        .bg_mem_data      (bg_mem_data),
-        .dac_palette_addr (dac_palette_addr),
-        .dac_palette_data (nes_color_code),
-        .dbg_vram_addr    (dbg_vram_addr),
-        .dbg_palette_00   (dbg_palette_00),
-        .nmi_out           (nmi_out)
+        .clk                (clk_25mhz), 
+        .reset              (reset),
+        .vblank_pulse       (vblank_pulse),
+        .clear_vblank_pulse (clear_vblank_pulse), // NEW
+        .sprite0_hit_pulse  (sprite0_hit_pulse),  // NEW
+        .nmi_out            (nmi_out),
+        .cpu_addr           (cpu_addr),
+        .cpu_data_in        (cpu_data_in),
+        .cpu_data_out       (cpu_data_out),
+        .cpu_read_n         (cpu_read_n),
+        .cpu_write_n        (cpu_write_n),
+        .chr_addr           (chr_addr),
+        .chr_data_in        (chr_data_in),
+        .chr_read_n         (chr_read_n),
+        .dbg_ctrl           (dbg_ctrl),
+        .dbg_mask           (dbg_mask),
+        .nes_visible        (is_rendering),
+        .bg_mem_addr        (bg_mem_addr),
+        .bg_mem_data        (bg_mem_data),
+        .dac_palette_addr   (dac_palette_addr),
+        .dac_palette_data   (nes_color_code),
+        .dbg_vram_addr      (dbg_vram_addr),
+        .dbg_palette_00     (dbg_palette_00)
     );
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;

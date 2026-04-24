@@ -27,18 +27,25 @@ module cpu_fsm (
     assign fsm_state_out = state;
 
     // =========================================================================
-    // NMI Latch Logic
-    // PPU sends a 1-cycle 25MHz pulse. CPU acknowledges it at 1.79MHz.
+    // NMI Latch Logic (Edge Triggered)
     // =========================================================================
     reg nmi_pending;
     reg nmi_active;
     assign nmi_active_out = nmi_active;
     
+    // Create a strict 1-cycle edge detector for the incoming NMI
+    reg last_nmi_in;
+    always @(posedge clk or posedge reset) begin
+        if (reset) last_nmi_in <= 1'b0;
+        else       last_nmi_in <= nmi_in;
+    end
+    wire nmi_edge = nmi_in && !last_nmi_in;
+    
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             nmi_pending <= 1'b0;
         end else begin
-            if (nmi_in) nmi_pending <= 1'b1;
+            if (nmi_edge) nmi_pending <= 1'b1;
             else if (cpu_ce && state == S_FETCH && nmi_pending) nmi_pending <= 1'b0;
         end
     end

@@ -11,6 +11,8 @@ module ppu_core (
     output wire [7:0]  cpu_data_out,  
     input  wire        cpu_read_n,    
     input  wire        cpu_write_n,   
+    input  wire        clear_vblank_pulse, // NEW
+    input  wire        sprite0_hit_pulse,  // NEW
 
     output wire [13:0] chr_addr,
     input  wire [7:0]  chr_data_in,
@@ -116,6 +118,8 @@ module ppu_registers (
     input  wire        cpu_read_n,
     input  wire        cpu_write_n,
     input  wire [7:0]  mem_data_in,   
+    input  wire        clear_vblank_pulse, // NEW
+    input  wire        sprite0_hit_pulse,  // NEW
     
     output reg  [7:0]  cpu_data_out,
     output reg  [7:0]  ctrl_out,
@@ -145,11 +149,21 @@ module ppu_registers (
             read_buffer   <= 8'h00;
         end else begin
         
+            
             // =================================================================
-            // NEW: Hardware VBlank Interrupt Logic
+            // Hardware Event Flag Logic
             // =================================================================
+            if (clear_vblank_pulse) begin
+                status_reg[7] <= 1'b0;
+                status_reg[6] <= 1'b0; // Clear Sprite 0 Hit
+            end
+            
             if (vblank_pulse) begin
                 status_reg[7] <= 1'b1;
+            end
+            
+            if (sprite0_hit_pulse) begin
+                status_reg[6] <= 1'b1; // Trigger Fake Sprite 0 Hit!
             end
 
             // CPU Write Logic
