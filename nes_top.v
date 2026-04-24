@@ -1,6 +1,7 @@
 /*
  * File: nes_top.v
  * Description: Top-level integration module for the NES architecture.
+ * Implements the full internal memory map and cartridge ROM interface.
  */
 
 module nes_top (
@@ -76,24 +77,52 @@ module nes_top (
         .current_state (cpu_state)   
     );
 
-    wire [7:0] ram_data_out; 
+    // =========================================================================
+    // MEMORY MAP DECODING
+    // =========================================================================
+    wire work_ram_cs = (cpu_address < 16'h2000); 
+    wire ppu_cs      = (cpu_address >= 16'h2000 && cpu_address <= 16'h3FFF);
+    wire prg_rom_cs  = (cpu_address >= 16'h8000);
+    
+    wire [7:0] work_ram_data_out; 
     wire [7:0] ppu_data_out;
+    wire [7:0] prg_data_out;
     
-    wire ram_cs = (cpu_address < 16'h2000) || (cpu_address >= 16'h8000); 
-    wire ppu_cs = (cpu_address >= 16'h2000 && cpu_address <= 16'h3FFF);
-    
-    assign cpu_data_in = ppu_cs ? ppu_data_out : ram_data_out;
-    
-    wire ram_write_en = cpu_write_en && ram_cs;
+    assign cpu_data_in = ppu_cs      ? ppu_data_out :
+                         prg_rom_cs  ? prg_data_out :
+                         work_ram_cs ? work_ram_data_out : 8'h00;
 
-    ram system_ram (
-        .clk      (clk_25mhz),
-        .addr     (cpu_address),
-        .data_in  (cpu_data_out),
-        .write_en (ram_write_en),
-        .data_out (ram_data_out)
+    // 1. CPU Work RAM (2KB)
+    wire work_ram_we = cpu_write_en && work_ram_cs;
+    work_ram cpu_ram (
+        .clk  (clk_25mhz),
+        .addr (cpu_address[10:0]),
+        .din  (cpu_data_out),
+        .we   (work_ram_we),
+        .dout (work_ram_data_out)
     );
 
+    // 2. PRG-ROM (32KB Cartridge Program)
+    prg_rom cart_prg (
+        .clk  (clk_25mhz),
+        .addr (cpu_address[14:0]),
+        .dout (prg_data_out)
+    );
+
+    // 3. CHR-ROM (8KB Cartridge Graphics)
+    wire [13:0] chr_addr;
+    wire [7:0]  chr_data_out;
+    wire        chr_read_n;
+    
+    chr_rom cart_chr (
+        .clk  (clk_25mhz),
+        .addr (chr_addr[12:0]),
+        .dout (chr_data_out)
+    );
+
+    // =========================================================================
+    // VIDEO SUBSYSTEM
+    // =========================================================================
     reg cpu_we_last;
     always @(posedge clk_25mhz) begin
         if (sys_reset) cpu_we_last <= 1'b0;
@@ -126,6 +155,10 @@ module nes_top (
         .cpu_read_n     (ppu_read_n),
         .cpu_write_n    (ppu_write_n),
         
+        .chr_addr       (chr_addr),      // Out to Cartridge
+        .chr_data_in    (chr_data_out),  // In from Cartridge
+        .chr_read_n     (chr_read_n),    
+        
         .vga_r          (VGA_R),
         .vga_g          (VGA_G),
         .vga_b          (VGA_B),
@@ -142,13 +175,15 @@ module nes_top (
         .dbg_nt_latch   (dbg_nt_latch)
     );
 
+    // =========================================================================
+    // TELEMETRY
+    // =========================================================================
     assign LEDR[9] = pll_locked;
     assign LEDR[8] = cpu_write_pulse; 
     assign LEDR[7] = ppu_cs; 
     assign LEDR[6] = 1'b0;
     assign LEDR[5:0] = cpu_state; 
     
-    // Telemetry Multiplexer
     wire [15:0] hex_display_data = SW[9] ? {1'b0, dbg_vram_addr} : 
                                    SW[8] ? {8'h00, dbg_nt_latch} : 
                                    cpu_pc;

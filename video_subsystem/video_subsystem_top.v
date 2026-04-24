@@ -2,12 +2,19 @@ module video_subsystem_top (
     input  wire        clk_25mhz,
     input  wire        reset,
 
+    // CPU Bus
     input  wire [2:0]  cpu_addr,
     input  wire [7:0]  cpu_data_in,
     output wire [7:0]  cpu_data_out,
     input  wire        cpu_read_n,
     input  wire        cpu_write_n,
+    
+    // NEW: Cartridge CHR-ROM Bus
+    output wire [13:0] chr_addr,
+    input  wire [7:0]  chr_data_in,
+    output wire        chr_read_n,
 
+    // VGA Output
     output wire [7:0]  vga_r,
     output wire [7:0]  vga_g,
     output wire [7:0]  vga_b,
@@ -17,11 +24,12 @@ module video_subsystem_top (
     output wire        vga_sync_n,
     output wire        vga_clk,
     
+    // Telemetry
     output wire [7:0]  dbg_ctrl,
     output wire [7:0]  dbg_mask,
     output wire [14:0] dbg_vram_addr,
     output wire [7:0]  dbg_palette_00,
-    output wire [7:0]  dbg_nt_latch    // NEW
+    output wire [7:0]  dbg_nt_latch
 );
 
     wire [7:0] nes_x, nes_y;
@@ -56,22 +64,11 @@ module video_subsystem_top (
         .bg_mem_addr     (bg_mem_addr),
         .bg_mem_data     (bg_mem_data),
         .pixel_color_idx (pixel_color_idx),
-        .dbg_nt_latch    (dbg_nt_latch)  // MAP TELEMETRY
+        .dbg_nt_latch    (dbg_nt_latch)
     );
 
     wire [4:0] dac_palette_addr = (pixel_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, pixel_color_idx};
     wire [7:0] nes_color_code;
-
-    wire [13:0] chr_addr;
-    wire        chr_read_n;
-    wire [7:0]  chr_data_in = (chr_addr == 14'h0010) ? 8'h3C :
-                              (chr_addr == 14'h0011) ? 8'h42 :
-                              (chr_addr == 14'h0012) ? 8'hA5 :
-                              (chr_addr == 14'h0013) ? 8'h81 :
-                              (chr_addr == 14'h0014) ? 8'hA5 :
-                              (chr_addr == 14'h0015) ? 8'h99 :
-                              (chr_addr == 14'h0016) ? 8'h42 :
-                              (chr_addr == 14'h0017) ? 8'h3C : 8'h00;
 
     ppu_core ppu_inst (
         .clk              (clk_25mhz), 
@@ -81,9 +78,9 @@ module video_subsystem_top (
         .cpu_data_out     (cpu_data_out),
         .cpu_read_n       (cpu_read_n),
         .cpu_write_n      (cpu_write_n),
-        .chr_addr         (chr_addr),
-        .chr_data_in      (chr_data_in),
-        .chr_read_n       (chr_read_n),
+        .chr_addr         (chr_addr),      // Passes straight to motherboard
+        .chr_data_in      (chr_data_in),   // Incoming from chr_rom
+        .chr_read_n       (chr_read_n),    // Passes straight to motherboard
         .dbg_ctrl         (dbg_ctrl),
         .dbg_mask         (dbg_mask),
         .nes_visible      (is_rendering),
