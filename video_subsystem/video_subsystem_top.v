@@ -17,11 +17,11 @@ module video_subsystem_top (
     output wire        vga_sync_n,
     output wire        vga_clk,
     
-    // Telemetry
     output wire [7:0]  dbg_ctrl,
     output wire [7:0]  dbg_mask,
     output wire [14:0] dbg_vram_addr,
-    output wire [7:0]  dbg_palette_00
+    output wire [7:0]  dbg_palette_00,
+    output wire [7:0]  dbg_nt_latch    // NEW
 );
 
     wire [7:0] nes_x, nes_y;
@@ -55,7 +55,8 @@ module video_subsystem_top (
         .nes_visible     (is_rendering), 
         .bg_mem_addr     (bg_mem_addr),
         .bg_mem_data     (bg_mem_data),
-        .pixel_color_idx (pixel_color_idx)
+        .pixel_color_idx (pixel_color_idx),
+        .dbg_nt_latch    (dbg_nt_latch)  // MAP TELEMETRY
     );
 
     wire [4:0] dac_palette_addr = (pixel_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, pixel_color_idx};
