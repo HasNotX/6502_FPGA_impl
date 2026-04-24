@@ -26,7 +26,8 @@ module ppu_core (
     output wire [7:0]  bg_mem_data,
     
     input  wire [4:0]  dac_palette_addr,
-    output wire [7:0]  dac_palette_data
+    output wire [7:0]  dac_palette_data,
+    output wire nmi_out
 );
 
     wire [7:0] ppu_ctrl;
@@ -66,7 +67,8 @@ module ppu_core (
         .ctrl_out       (ppu_ctrl),
         .mask_out       (ppu_mask),
         .vram_addr_out  (vram_addr),
-        .oam_addr_out   (oam_addr)
+        .oam_addr_out   (oam_addr),
+        .nmi_out         (nmi_out)
     );
 
     vram_2k nametable_ram (
@@ -119,7 +121,8 @@ module ppu_registers (
     output reg  [7:0]  ctrl_out,
     output reg  [7:0]  mask_out,
     output reg  [14:0] vram_addr_out,
-    output reg  [7:0]  oam_addr_out
+    output reg  [7:0]  oam_addr_out,
+    output wire nmi_out
 );
 
     reg w_toggle; 
@@ -127,6 +130,9 @@ module ppu_registers (
     reg [7:0] scroll_x;
     reg [7:0] scroll_y;
     reg [7:0] read_buffer; 
+
+    // Trigger NMI if VBlank (status_reg[7]) and NMI Enable (ctrl_out[7]) are both high
+    assign nmi_out = status_reg[7] & ctrl_out[7];
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin

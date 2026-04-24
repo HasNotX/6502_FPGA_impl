@@ -29,7 +29,8 @@ module video_subsystem_top (
     output wire [7:0]  dbg_mask,
     output wire [14:0] dbg_vram_addr,
     output wire [7:0]  dbg_palette_00,
-    output wire [7:0]  dbg_nt_latch
+    output wire [7:0]  dbg_nt_latch,
+    output wire nmi_out
 );
 
     wire [7:0] nes_x, nes_y;
@@ -104,7 +105,8 @@ module video_subsystem_top (
         .dac_palette_addr (dac_palette_addr),
         .dac_palette_data (nes_color_code),
         .dbg_vram_addr    (dbg_vram_addr),
-        .dbg_palette_00   (dbg_palette_00)
+        .dbg_palette_00   (dbg_palette_00),
+        .nmi_out           (nmi_out)
     );
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;

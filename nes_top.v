@@ -63,7 +63,8 @@ module nes_top (
     wire [7:0]  cpu_data_in;
     wire        cpu_write_en;
     wire [15:0] cpu_pc;          
-    wire [5:0]  cpu_state;       
+    wire [5:0]  cpu_state;    
+    wire        ppu_nmi;
 
     MOS_6502_CPU cpu_inst (
         .clk_25mhz     (clk_25mhz),
@@ -71,6 +72,7 @@ module nes_top (
         .reset         (sys_reset), 
         .address       (cpu_address),
         .data_in       (cpu_data_in),
+        .nmi_in        (ppu_nmi),
         .data_out      (cpu_data_out),
         .write_en      (cpu_write_en),
         .current_pc    (cpu_pc),     
@@ -172,7 +174,8 @@ module nes_top (
         .dbg_mask       (ppu_dbg_mask),
         .dbg_vram_addr  (dbg_vram_addr),
         .dbg_palette_00 (dbg_palette_00),
-        .dbg_nt_latch   (dbg_nt_latch)
+        .dbg_nt_latch   (dbg_nt_latch),
+        .nmi_out        (ppu_nmi),
     );
 
     // =========================================================================

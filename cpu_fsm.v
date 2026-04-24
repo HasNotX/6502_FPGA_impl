@@ -1,18 +1,11 @@
 // =============================================================================
 // cpu_fsm.v  —  MOS 6502 FSM
-//
-// Fixes applied vs original:
-//   1. ADC/SBC now set the V (overflow) flag in all execution paths.
-//   2. PLP ($28) forces bit5=1, bit4=0 after the pull.
-//   3. RTI also forces bit5=1 after restoring SR from the stack.
-//   4. The operand-fetch wait state is inserted for ALL non-immediate reads.
-//   5. s_reg initialises to $24 (bit5=1, I=1).
-//   6. REPAIRED: JSR and BRK off-by-one write_en synchronous timing bugs fixed.
 // =============================================================================
 
 module cpu_fsm (
     input clk, reset,
     input cpu_ce,
+    input nmi_in,                     // NEW: NMI Pulse 
     input [7:0] data_in,
     input [1:0] extra_cycles_in,
     input [3:0] alu_op_in,
@@ -25,12 +18,30 @@ module cpu_fsm (
     output reg [7:0] ptr_lo, ptr_hi,
     output reg write_en,
     output reg [7:0] push_data,
-    output wire [5:0] fsm_state_out
+    output wire [5:0] fsm_state_out,
+    output wire nmi_active_out        // NEW: Tells MUX to use $FFFA
 );
 
     reg [7:0] res;
     reg [5:0] state;
     assign fsm_state_out = state;
+
+    // =========================================================================
+    // NMI Latch Logic
+    // PPU sends a 1-cycle 25MHz pulse. CPU acknowledges it at 1.79MHz.
+    // =========================================================================
+    reg nmi_pending;
+    reg nmi_active;
+    assign nmi_active_out = nmi_active;
+    
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            nmi_pending <= 1'b0;
+        end else begin
+            if (nmi_in) nmi_pending <= 1'b1;
+            else if (cpu_ce && state == S_FETCH && nmi_pending) nmi_pending <= 1'b0;
+        end
+    end
 
     localparam S_FETCH             = 6'd0,
                S_FETCH_WAIT        = 6'd7,
@@ -147,6 +158,7 @@ module cpu_fsm (
     always @(posedge clk) begin
         if (reset) begin
             state      <= S_RESET_VEC_LO_WAIT;
+            nmi_active <= 1'b0;
             PC         <= 16'hFFFC;
             accum      <= 8'h00;
             X          <= 8'h00;
@@ -164,10 +176,22 @@ module cpu_fsm (
         end else if (cpu_ce) begin
             case (state)
 
+                // ─────────────────────────────────────────────────────────────
+                // HIJACK POINT: If NMI is pending, immediately branch to Push!
+                // ─────────────────────────────────────────────────────────────
                 S_FETCH: begin
                     write_en <= 1'b0;
-                    state    <= S_FETCH_WAIT;
+                    if (nmi_pending) begin
+                        nmi_active <= 1'b1;
+                        push_data  <= PC[15:8];    // NMI pushes current PC, not PC+1
+                        write_en   <= 1'b1;
+                        state      <= S_BRK_PUSH_PCH;
+                    end else begin
+                        nmi_active <= 1'b0;
+                        state      <= S_FETCH_WAIT;
+                    end
                 end
+                
                 S_FETCH_WAIT: state <= S_FETCH2;
                 S_FETCH2: begin
                     inst_reg <= data_in;
@@ -270,7 +294,6 @@ module cpu_fsm (
                                 state     <= S_PULL_WAIT;
                             end
                             
-                            // FIX: Assert write_en here to correctly align with S_BRK_PUSH_PCH
                             8'h00: begin
                                 push_data <= brk_ret_addr[15:8];
                                 write_en  <= 1'b1;         
@@ -323,7 +346,6 @@ module cpu_fsm (
                     end else if (inst_reg == 8'h6C) begin
                         state <= S_JMP_IND_LO_WAIT;
                         
-                    // FIX: Assert write_en here to correctly align with S_JSR_PUSH_HI
                     end else if (inst_reg == 8'h20) begin
                         push_data <= jsr_ret_addr[15:8];
                         write_en  <= 1'b1;              
@@ -354,25 +376,26 @@ module cpu_fsm (
                         else
                             state <= is_indirect_mode ? S_PTR_LO_WAIT : S_WRITEBACK_WAIT;
                     end
-                end // S_EXECUTE
+                end 
 
                 // ─────────────────────────────────────────────────────────────
-                // BRK push sequence
+                // BRK / NMI push sequence (MERGED)
                 // ─────────────────────────────────────────────────────────────
                 S_BRK_PUSH_PCH: begin
                     write_en  <= 1'b1;
                     s_pointer <= s_pointer - 8'd1;
-                    push_data <= brk_ret_addr[7:0];   
+                    push_data <= nmi_active ? PC[7:0] : brk_ret_addr[7:0];   
                     state     <= S_BRK_PUSH_PCL;
                 end
                 S_BRK_PUSH_PCL: begin
                     write_en  <= 1'b1;
                     s_pointer <= s_pointer - 8'd1;
-                    push_data <= s_reg | 8'h30;
+                    // Hardware interrupts push B-flag as 0. BRK pushes B-flag as 1.
+                    push_data <= nmi_active ? ((s_reg | 8'h20) & 8'hEF) : (s_reg | 8'h30);
                     state     <= S_BRK_PUSH_SR;
                 end
                 S_BRK_PUSH_SR: begin
-                    write_en  <= 1'b0;                 // FIX: Safely deassert to avoid corrupting Vector Read
+                    write_en  <= 1'b0;                 
                     s_pointer <= s_pointer - 8'd1;
                     s_reg[2]  <= 1'b1;                 
                     state     <= S_BRK_VEC_LO_WAIT;
@@ -405,11 +428,11 @@ module cpu_fsm (
 
                 S_PULL_WAIT: state <= S_PULL_EXEC;
                 S_PULL_EXEC: begin
-                    if (inst_reg == 8'h68) begin   // PLA
+                    if (inst_reg == 8'h68) begin   
                         accum    <= data_in;
                         s_reg[1] <= (data_in == 8'h00);
                         s_reg[7] <= data_in[7];
-                    end else begin                 // PLP
+                    end else begin                 
                         s_reg <= (data_in | 8'h20) & 8'hEF;
                     end
                     state <= S_FETCH;
@@ -482,9 +505,6 @@ module cpu_fsm (
                 end
                 S_RMW_WRITE: begin write_en <= 1'b0; state <= S_FETCH; end
 
-                // ─────────────────────────────────────────────────────────────
-                // JSR push sequence
-                // ─────────────────────────────────────────────────────────────
                 S_JSR_PUSH_HI: begin
                     write_en  <= 1'b1;
                     s_pointer <= s_pointer - 8'd1;
@@ -492,7 +512,7 @@ module cpu_fsm (
                     state     <= S_JSR_PUSH_LO;
                 end
                 S_JSR_PUSH_LO: begin
-                    write_en  <= 1'b0;                 // FIX: Safely deassert to avoid overwriting PC on Jump
+                    write_en  <= 1'b0;                 
                     s_pointer <= s_pointer - 8'd1;
                     state     <= S_JSR_JUMP;
                 end
@@ -646,19 +666,14 @@ module cpu_fsm (
             S_PUSH_WAIT, S_PUSH_EXEC,
             S_PULL_WAIT, S_PULL_EXEC:
                 addr_sel = 3'd5;
-                
-            // Bug Fix by Hassaan: Hide the target address during WAIT to prevent Fake PPU Reads
             S_STORE_WAIT:
                 addr_sel = 3'd0; 
             S_STORE_EXEC:
                 addr_sel = 3'd1;
-                
-            // Bug Fix by Hassaan: Hide the target address during WAIT to prevent Fake PPU Reads
             S_STORE_IND_WAIT:
                 addr_sel = 3'd0; 
             S_STORE_IND_EXEC:
                 addr_sel = 3'd4;
-                
             default:
                 addr_sel = 3'd0;
         endcase
