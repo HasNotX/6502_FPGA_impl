@@ -59,8 +59,15 @@ module video_subsystem_top (
     // NEW: VBlank Edge Pulse Generator
     // =========================================================================
     reg last_nes_visible;
-    always @(posedge clk_25mhz) last_nes_visible <= nes_visible;
-    wire vblank_pulse = !nes_visible && last_nes_visible;
+    reg [7:0] last_nes_y;
+    always @(posedge clk_25mhz) begin
+        last_nes_visible <= nes_visible;
+        last_nes_y       <= nes_y;
+    end
+
+    // Use last_nes_y! When the beam shuts off, we check if we just finished row 239.
+    // Bug Fix By Hassaan: Only pulse when the beam drops at the end of the very last scanline (239)
+    wire vblank_pulse = !nes_visible && last_nes_visible && (last_nes_y == 8'd239);
 
     ppu_bg_render bg_render (
         .clk             (clk_25mhz),
