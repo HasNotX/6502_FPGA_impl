@@ -103,13 +103,14 @@ module ppu_core (
 
     // Palette RAM (32 Bytes)
     palette_ram pal_ram (
-        .clk      (clk),
-        .addr     (target_addr[4:0]),  
-        .din      (cpu_data_in),
-        .we       (target_we && (target_addr >= 15'h3F00)),
-        .dout     (palette_data_out),
-        .dac_addr (dac_palette_addr),
-        .dac_dout (dac_palette_data)
+        .clk              (clk),
+        .addr             (target_addr[4:0]),
+        .din              (cpu_data_in),
+        .we               (target_we && (target_addr >= 15'h3F00)),
+        .dout             (palette_data_out),
+        .dac_addr         (dac_palette_addr), 
+        .dac_dout         (dac_palette_data),  
+        .dbg_palette_00   (dbg_palette_00)
     );
 
     // Object Attribute Memory (256 Bytes for Sprites - Independent Bus)
