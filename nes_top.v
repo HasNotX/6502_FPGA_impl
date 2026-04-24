@@ -116,15 +116,25 @@ module nes_top (
     // =========================================================================
     // 6. Video Subsystem Integration
     // =========================================================================
+    
+    // Write Pulse Generation
     reg cpu_we_last;
     always @(posedge clk_25mhz) begin
         if (sys_reset) cpu_we_last <= 1'b0;
         else           cpu_we_last <= cpu_write_en;
     end
     wire cpu_write_pulse = cpu_write_en && !cpu_we_last;
-
     wire ppu_write_n = ~(cpu_write_pulse && ppu_cs);
-    wire ppu_read_n  = ~(~cpu_write_en && ppu_cs);
+
+    // NEW: Read Pulse Generation (Edge-Detected)
+    wire cpu_read_active = ~cpu_write_en && ppu_cs;
+    reg cpu_re_last;
+    always @(posedge clk_25mhz) begin
+        if (sys_reset) cpu_re_last <= 1'b0;
+        else           cpu_re_last <= cpu_read_active;
+    end
+    wire cpu_read_pulse = cpu_read_active && !cpu_re_last;
+    wire ppu_read_n  = ~cpu_read_pulse;
     
     wire [7:0]  ppu_dbg_ctrl;
     wire [7:0]  ppu_dbg_mask;

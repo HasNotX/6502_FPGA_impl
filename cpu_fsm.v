@@ -646,10 +646,19 @@ module cpu_fsm (
             S_PUSH_WAIT, S_PUSH_EXEC,
             S_PULL_WAIT, S_PULL_EXEC:
                 addr_sel = 3'd5;
-            S_STORE_WAIT, S_STORE_EXEC:
+                
+            // Bug Fix by Hassaan: Hide the target address during WAIT to prevent Fake PPU Reads
+            S_STORE_WAIT:
+                addr_sel = 3'd0; 
+            S_STORE_EXEC:
                 addr_sel = 3'd1;
-            S_STORE_IND_WAIT, S_STORE_IND_EXEC:
+                
+            // Bug Fix by Hassaan: Hide the target address during WAIT to prevent Fake PPU Reads
+            S_STORE_IND_WAIT:
+                addr_sel = 3'd0; 
+            S_STORE_IND_EXEC:
                 addr_sel = 3'd4;
+                
             default:
                 addr_sel = 3'd0;
         endcase
