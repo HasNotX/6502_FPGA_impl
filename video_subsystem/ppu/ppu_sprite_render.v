@@ -1,8 +1,8 @@
 /*
  * File: ppu_sprite_render.v
  * Description: HIGH-SPEED OAM Sprite Evaluation and Rendering Pipeline.
- * Corrected for 2-cycle M10K BRAM read latency, 9-bit coordinate wrapping,
- * and true-to-silicon 1-scanline Y-coordinate delays.
+ * Corrected with an active_render_y guard to prevent double-buffer tearing 
+ * caused by VGA 2x vertical integer scaling sweeps.
  */
 
 module ppu_sprite_render (
@@ -83,7 +83,6 @@ module ppu_sprite_render (
                S_EVAL_X_LATCH    = 5'd9,
                S_EVAL_DONE       = 5'd10, 
                
-               // Phase 2: Fully Padded Wait States for M10K Latency
                S_FETCH_REQ       = 5'd11,
                S_FETCH_LO_WAIT1  = 5'd12,
                S_FETCH_LO_WAIT2  = 5'd13,
@@ -123,7 +122,6 @@ module ppu_sprite_render (
                 S_EVAL_Y_CHK: begin
                     latched_y <= oam_data;
                     
-                    // Hardware Accurate: Sprites delayed by 1 scanline (+1 to +9 bounds)
                     if ({1'b0, next_nes_y} >= ({1'b0, oam_data} + 9'd1) && 
                         {1'b0, next_nes_y} <  ({1'b0, oam_data} + 9'd9) && 
                         oam_data < 8'd240 && 
@@ -195,7 +193,6 @@ module ppu_sprite_render (
                     eval_state <= S_FETCH_LO_WAIT1;
                 end
                 
-                // Padded Wait States for M10K 2-Cycle Registered Outputs
                 S_FETCH_LO_WAIT1: eval_state <= S_FETCH_LO_WAIT2;
                 S_FETCH_LO_WAIT2: eval_state <= S_FETCH_LO_LATCH;
                 
@@ -223,11 +220,14 @@ module ppu_sprite_render (
     end
 
     // ─────────────────────────────────────────────────────────────────────────
-    // The Double Buffer Transfer (Start of visible scanline)
+    // The Guarded Double Buffer Transfer 
     // ─────────────────────────────────────────────────────────────────────────
     integer j;
+    reg [7:0] active_render_y;
+    
     always @(posedge clk or posedge reset) begin
         if (reset) begin
+            active_render_y <= 8'hFF;
             active_sprite_count <= 4'd0;
             for (j = 0; j < 8; j = j + 1) begin
                 active_spr_x[j]       <= 8'd0;
@@ -236,7 +236,10 @@ module ppu_sprite_render (
                 active_spr_pat_hi[j]  <= 8'd0;
                 active_spr_is_zero[j] <= 1'b0;
             end
-        end else if (start_of_line) begin
+            
+        // GUARDBAND: Only transfer arrays on the FIRST sweep of a new nes_y
+        end else if (start_of_line && nes_y != active_render_y) begin
+            active_render_y <= nes_y;
             active_sprite_count <= eval_sprite_count;
             for (j = 0; j < 8; j = j + 1) begin
                 active_spr_x[j]       <= eval_spr_x[j];
@@ -269,7 +272,6 @@ module ppu_sprite_render (
             for (i = 7; i >= 0; i = i - 1) begin
                 if (i < active_sprite_count) begin
                     
-                    // 9-Bit Math protects against right-edge disappearance overflow
                     if ({1'b0, nes_x} >= {1'b0, active_spr_x[i]} && 
                         {1'b0, nes_x} <  ({1'b0, active_spr_x[i]} + 9'd8)) begin
                         
