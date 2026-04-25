@@ -41,10 +41,11 @@ module ppu_core (
     
     // NEW: Sprite subsystem connections
     input  wire [7:0]  nes_y,
+    input  wire        true_sprite0_hit,
     output wire [3:0]  sprite_color_idx,
     output wire        sprite_bg_priority,
     output wire        sprite0_active,
-    output wire        true_sprite0_hit
+    output wire        dbg_status
 );
 
     wire [7:0] ppu_ctrl;
@@ -55,7 +56,7 @@ module ppu_core (
     assign dbg_ctrl = ppu_ctrl;
     assign dbg_mask = ppu_mask;
     assign dbg_vram_addr = vram_addr;
-    
+    assign dbg_status = dbg_ppu_reg_status;
     wire [7:0] vram_data_out;
     wire [7:0] palette_data_out;
     wire [7:0] oam_data_out;
@@ -94,6 +95,8 @@ module ppu_core (
     assign dbg_scroll_x = scroll_x;
     assign dbg_scroll_y = scroll_y;
 
+    wire dbg_ppu_reg_status; // NEW: Expose PPUSTATUS for debugging
+
     ppu_registers regs_inst (
         .clk                (clk),
         .reset              (reset),
@@ -114,7 +117,8 @@ module ppu_core (
         .loopy_scroll_x     (loopy_scroll_x), // NEW
         .loopy_scroll_y     (loopy_scroll_y), // NEW
         .loopy_nt_x         (loopy_nt_x),     // NEW
-        .loopy_nt_y         (loopy_nt_y)      // NEW
+        .loopy_nt_y         (loopy_nt_y),      // NEW
+        .status_out          (dbg_ppu_reg_status) // NEW
     );
 
     ppu_sprite_render spr_render (
@@ -189,11 +193,13 @@ module ppu_registers (
     output wire [7:0]  loopy_scroll_x,
     output wire [7:0]  loopy_scroll_y,
     output wire        loopy_nt_x,
-    output wire        loopy_nt_y
+    output wire        loopy_nt_y,
+    output wire [7:0]  status_out // NEW: Expose PPUSTATUS for debugging
 );
 
     reg [7:0] status_reg;
     reg [7:0] read_buffer; 
+    assign status_out = status_reg; // Expose PPUSTATUS for debugging
 
     // The Unified "Loopy" Registers
     reg [14:0] v;       // Current VRAM address (15 bits)

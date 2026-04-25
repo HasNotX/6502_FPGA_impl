@@ -26,10 +26,16 @@ module video_subsystem_top (
     output wire [14:0] dbg_vram_addr,
     output wire [7:0]  dbg_palette_00,
     output wire [7:0]  dbg_nt_latch,
-    output wire        nmi_out
+    output wire        nmi_out,
+    output wire [7:0]  dbg_nes_x,
+    output wire [7:0]  dbg_nes_y,
+    output wire [7:0]  dbg_status
 );
 
     wire [7:0] nes_x, nes_y;
+    assign dbg_nes_x = nes_x;
+    assign dbg_nes_y = nes_y;
+
     wire nes_visible;
 
     nes_vga_core vga_core (
@@ -136,7 +142,7 @@ module video_subsystem_top (
         .dbg_mask           (dbg_mask),
         .dbg_vram_addr      (dbg_vram_addr),
         .dbg_palette_00     (dbg_palette_00),
-        
+        .dbg_status         (dbg_status),
         .nes_x              (nes_x),
         .nes_y              (nes_y),
         .nes_visible        (nes_visible),
@@ -152,7 +158,7 @@ module video_subsystem_top (
         .loopy_scroll_x     (loopy_scroll_x), // NEW
         .loopy_scroll_y     (loopy_scroll_y), // NEW
         .loopy_nt_x         (loopy_nt_x),     // NEW
-        .loopy_nt_y         (loopy_nt_y)      // NEW
+        .loopy_nt_y         (loopy_nt_y)
     );
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;

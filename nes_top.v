@@ -183,6 +183,11 @@ module nes_top (
     wire [14:0] dbg_vram_addr;
     wire [7:0]  dbg_palette_00;
     wire [7:0]  dbg_nt_latch;
+    
+    // NEW: Wires extracted for telemetry
+    wire [7:0]  dbg_nes_x;
+    wire [7:0]  dbg_nes_y;
+    wire [7:0]  ppu_dbg_status;
 
     video_subsystem_top video_engine (
         .clk_25mhz      (clk_25mhz),
@@ -211,32 +216,48 @@ module nes_top (
         .dbg_vram_addr  (dbg_vram_addr),
         .dbg_palette_00 (dbg_palette_00),
         .dbg_nt_latch   (dbg_nt_latch),
-        .nmi_out        (ppu_nmi)
+        .nmi_out        (ppu_nmi),
+        
+        // NEW: Telemetry ports mapped
+        .dbg_nes_x      (dbg_nes_x),
+        .dbg_nes_y      (dbg_nes_y),
+        .dbg_status     (ppu_dbg_status)
     );
 
     // =========================================================================
     // TELEMETRY
     // =========================================================================
     assign LEDR[9] = pll_locked;
-    assign LEDR[8] = dma_active; // Switch LED 8 to show DMA actively firing!
+    assign LEDR[8] = dma_active; 
     assign LEDR[7] = ppu_cs; 
     assign LEDR[6] = 1'b0;
     assign LEDR[5:0] = cpu_state; 
     
-    wire [15:0] hex_display_data = SW[9] ? {1'b0, dbg_vram_addr} : 
-                                   SW[8] ? {8'h00, dbg_nt_latch} : 
-                                   cpu_pc;
-                                   
-    wire [7:0]  hex_display_high = SW[9] ? dbg_palette_00 : 
-                                   SW[8] ? 8'h00 : 
-                                   8'h00;
-
-    hex_decoder hex5_inst (.hex_in(hex_display_high[7:4]), .segments(HEX5));
-    hex_decoder hex4_inst (.hex_in(hex_display_high[3:0]), .segments(HEX4));
-    hex_decoder hex3_inst (.hex_in(hex_display_data[15:12]), .segments(HEX3));
-    hex_decoder hex2_inst (.hex_in(hex_display_data[11:8]),  .segments(HEX2));
-    hex_decoder hex1_inst (.hex_in(hex_display_data[7:4]),   .segments(HEX1));
-    hex_decoder hex0_inst (.hex_in(hex_display_data[3:0]),   .segments(HEX0));
+    // -------------------------------------------------------------------------
+    // Hardware Telemetry Controller
+    // -------------------------------------------------------------------------
+    debug_top telemetry_inst (
+        .sw             (SW),
+        
+        .cpu_pc         (cpu_pc),            
+        .cpu_data       (cpu_data_in),       
+        
+        .ppu_vram_addr  (dbg_vram_addr),     
+        .ppu_palette_00 (dbg_palette_00),    
+        
+        .nes_x          (dbg_nes_x),         
+        .nes_y          (dbg_nes_y),         
+        
+        .ppu_ctrl       (ppu_dbg_ctrl),      
+        .ppu_status     (ppu_dbg_status),    
+        
+        .hex0           (HEX0),
+        .hex1           (HEX1),
+        .hex2           (HEX2),
+        .hex3           (HEX3),
+        .hex4           (HEX4),
+        .hex5           (HEX5)
+    );
 
 endmodule
 
