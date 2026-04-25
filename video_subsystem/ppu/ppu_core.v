@@ -1,7 +1,8 @@
 /*
  * File: ppu_core.v
  * Description: Top-Level PPU Wrapper and Hardware Bus Arbitrator.
- * Implements priority-encoded memory routing to prevent HBlank collisions.
+ * Implements priority-encoded memory routing and corrected port mapping
+ * to allow external Sprite 0 Hit detection to trigger internal registers.
  */
 
 module ppu_core (
@@ -46,7 +47,7 @@ module ppu_core (
     output wire [3:0]  sprite_color_idx,
     output wire        sprite_bg_priority,
     output wire        sprite0_active,
-    output wire        true_sprite0_hit
+    input  wire        true_sprite0_hit  // THE FIX: Must be an INPUT from video_subsystem_top
 );
 
     wire [7:0] ppu_ctrl;
@@ -68,7 +69,6 @@ module ppu_core (
     wire is_sprite_fetch;
     wire [13:0] sprite_chr_addr;
     
-    // CPU has absolute priority during $2007 accesses
     wire cpu_access = (cpu_addr == 3'd7) && (!cpu_read_n || !cpu_write_n);
     
     wire [14:0] target_addr = cpu_access      ? vram_addr :
@@ -77,7 +77,6 @@ module ppu_core (
                                                 
     wire target_we = cpu_access ? (!cpu_write_n) : 1'b0;
 
-    // OAM Bus Arbiter
     wire [7:0] sprite_oam_addr;
     wire active_rendering = (nes_visible || is_sprite_fetch);
     wire [7:0] active_oam_addr = active_rendering ? sprite_oam_addr : cpu_oam_addr;
