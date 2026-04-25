@@ -67,25 +67,34 @@ module video_subsystem_top (
     wire clear_vblank_pulse = nes_visible && !last_nes_visible && (nes_y == 8'd0);
     
     // ─────────────────────────────────────────────────────────────────────────
-    // True Pixel Multiplexer & Sprite 0 Hit Detection
+    // True Pixel Multiplexer & Edge Clipping
     // ─────────────────────────────────────────────────────────────────────────
-    wire bg_opaque  = (bg_color_idx[1:0] != 2'b00);
-    wire spr_opaque = (spr_color_idx[1:0] != 2'b00);
+    // PPUMASK controls clipping the leftmost 8 pixels to hide scroll wrap
+    wire show_bg_left8  = dbg_mask[1];
+    wire show_spr_left8 = dbg_mask[2];
+    wire bg_clip  = (nes_x < 8) && !show_bg_left8;
+    wire spr_clip = (nes_x < 8) && !show_spr_left8;
+    
+    wire bg_opaque  = (bg_color_idx[1:0] != 2'b00) && !bg_clip;
+    wire spr_opaque = (spr_color_idx[1:0] != 2'b00) && !spr_clip;
     
     reg [4:0] dac_palette_addr;
     always @(*) begin
         if (!is_rendering) begin
             dac_palette_addr = 5'h00;
         end else if (spr_opaque && (!bg_opaque || !spr_bg_priority)) begin
-            dac_palette_addr = {1'b1, spr_color_idx}; // Sprite Palette Base
+            dac_palette_addr = {1'b1, spr_color_idx}; 
         end else if (bg_opaque) begin
-            dac_palette_addr = {1'b0, bg_color_idx};  // BG Palette Base
+            dac_palette_addr = {1'b0, bg_color_idx};  
         end else begin
-            dac_palette_addr = 5'h00;                 // Universal Background
+            dac_palette_addr = 5'h00;                 
         end
     end
     
     wire true_sprite0_hit = nes_visible && bg_opaque && spr_opaque && spr0_active;
+
+    wire [7:0] scroll_x;
+    wire [7:0] scroll_y;
 
     ppu_bg_render bg_render (
         .clk             (clk_25mhz),
@@ -94,6 +103,8 @@ module video_subsystem_top (
         .nes_y           (nes_y),
         .nes_visible     (is_rendering), 
         .ppu_ctrl_reg    (dbg_ctrl), 
+        .scroll_x        (scroll_x),      // Plumbed!
+        .scroll_y        (scroll_y),      // Plumbed!
         .bg_mem_addr     (bg_mem_addr),
         .bg_mem_data     (bg_mem_data),
         .pixel_color_idx (bg_color_idx),
@@ -102,6 +113,7 @@ module video_subsystem_top (
 
     wire [7:0] nes_color_code;
 
+    // Notice we mapped .dbg_scroll_x to the scroll_x wire
     ppu_core ppu_inst (
         .clk                (clk_25mhz), 
         .reset              (reset),
@@ -121,7 +133,6 @@ module video_subsystem_top (
         .dbg_vram_addr      (dbg_vram_addr),
         .dbg_palette_00     (dbg_palette_00),
         
-        // Pass rendering data back and forth
         .nes_x              (nes_x),
         .nes_y              (nes_y),
         .nes_visible        (nes_visible),
@@ -130,11 +141,13 @@ module video_subsystem_top (
         .dac_palette_addr   (dac_palette_addr),
         .dac_palette_data   (nes_color_code),
         
-        // Sprite subsystem connections
         .sprite_color_idx   (spr_color_idx),
         .sprite_bg_priority (spr_bg_priority),
         .sprite0_active     (spr0_active),
-        .true_sprite0_hit   (true_sprite0_hit)
+        .true_sprite0_hit   (true_sprite0_hit),
+        
+        .dbg_scroll_x       (scroll_x),    // Connect exposing port
+        .dbg_scroll_y       (scroll_y)     // Connect exposing port
     );
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;

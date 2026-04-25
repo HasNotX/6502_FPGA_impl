@@ -1,7 +1,7 @@
 /*
  * File: nes_top.v
  * Description: Top-level integration module for the NES architecture.
- * Implements the full internal memory map and cartridge ROM interface.
+ * Implements System Bus multiplexing for CPU and DMA OAM transfers.
  */
 
 module nes_top (
@@ -48,31 +48,47 @@ module nes_top (
 
     wire sys_reset = (~pll_locked) | clean_reset_btn;
 
-    wire cpu_ce;
+    wire cpu_ce_raw;
     wire ppu_ce;
     
     nes_clock_generator clk_gen (
         .clk_25mhz (clk_25mhz),
         .reset     (sys_reset),
-        .cpu_ce    (cpu_ce),
+        .cpu_ce    (cpu_ce_raw),
         .ppu_ce    (ppu_ce)
     );
+
+    // =========================================================================
+    // SYSTEM BUS ARBITRATOR (CPU vs DMA)
+    // =========================================================================
+    wire        dma_active;
+    wire [15:0] dma_addr;
+    wire [7:0]  dma_data_out;
+    wire        dma_we;
+    
+    // Halt the CPU entirely while DMA owns the bus
+    wire cpu_ce = cpu_ce_raw & ~dma_active;
 
     wire [15:0] cpu_address;
     wire [7:0]  cpu_data_out;
     wire [7:0]  cpu_data_in;
     wire        cpu_write_en;
+    
+    wire [15:0] sys_address  = dma_active ? dma_addr     : cpu_address;
+    wire [7:0]  sys_data_out = dma_active ? dma_data_out : cpu_data_out;
+    wire        sys_write_en = dma_active ? dma_we       : cpu_write_en;
+
     wire [15:0] cpu_pc;          
-    wire [5:0]  cpu_state;    
-    wire        ppu_nmi;
+    wire [5:0]  cpu_state;       
+    wire        ppu_nmi; 
 
     MOS_6502_CPU cpu_inst (
         .clk_25mhz     (clk_25mhz),
         .cpu_ce        (cpu_ce),
         .reset         (sys_reset), 
+        .nmi_in        (ppu_nmi),
         .address       (cpu_address),
         .data_in       (cpu_data_in),
-        .nmi_in        (ppu_nmi),
         .data_out      (cpu_data_out),
         .write_en      (cpu_write_en),
         .current_pc    (cpu_pc),     
@@ -82,9 +98,9 @@ module nes_top (
     // =========================================================================
     // MEMORY MAP DECODING
     // =========================================================================
-    wire work_ram_cs = (cpu_address < 16'h2000); 
-    wire ppu_cs      = (cpu_address >= 16'h2000 && cpu_address <= 16'h3FFF);
-    wire prg_rom_cs  = (cpu_address >= 16'h8000);
+    wire work_ram_cs = (sys_address < 16'h2000); 
+    wire ppu_cs      = (sys_address >= 16'h2000 && sys_address <= 16'h3FFF);
+    wire prg_rom_cs  = (sys_address >= 16'h8000);
     
     wire [7:0] work_ram_data_out; 
     wire [7:0] ppu_data_out;
@@ -94,24 +110,21 @@ module nes_top (
                          prg_rom_cs  ? prg_data_out :
                          work_ram_cs ? work_ram_data_out : 8'h00;
 
-    // 1. CPU Work RAM (2KB)
-    wire work_ram_we = cpu_write_en && work_ram_cs;
+    wire work_ram_we = sys_write_en && work_ram_cs;
     work_ram cpu_ram (
         .clk  (clk_25mhz),
-        .addr (cpu_address[10:0]),
-        .din  (cpu_data_out),
+        .addr (sys_address[10:0]),
+        .din  (sys_data_out),
         .we   (work_ram_we),
         .dout (work_ram_data_out)
     );
 
-    // 2. PRG-ROM (32KB Cartridge Program)
     prg_rom cart_prg (
         .clk  (clk_25mhz),
-        .addr (cpu_address[14:0]),
+        .addr (sys_address[14:0]),
         .dout (prg_data_out)
     );
 
-    // 3. CHR-ROM (8KB Cartridge Graphics)
     wire [13:0] chr_addr;
     wire [7:0]  chr_data_out;
     wire        chr_read_n;
@@ -123,7 +136,7 @@ module nes_top (
     );
 
     // =========================================================================
-    // VIDEO SUBSYSTEM
+    // DMA CONTROLLER
     // =========================================================================
     reg cpu_we_last;
     always @(posedge clk_25mhz) begin
@@ -131,16 +144,39 @@ module nes_top (
         else           cpu_we_last <= cpu_write_en;
     end
     wire cpu_write_pulse = cpu_write_en && !cpu_we_last;
-    wire ppu_write_n = ~(cpu_write_pulse && ppu_cs);
+    wire dma_start = cpu_write_pulse && (cpu_address == 16'h4014);
 
-    wire cpu_read_active = ~cpu_write_en && ppu_cs;
-    reg cpu_re_last;
+    nes_dma dma_inst (
+        .clk          (clk_25mhz),
+        .reset        (sys_reset),
+        .dma_start    (dma_start),
+        .page_in      (cpu_data_out),
+        .ram_data_in  (work_ram_data_out),
+        .dma_active   (dma_active),
+        .dma_addr     (dma_addr),
+        .dma_data_out (dma_data_out),
+        .dma_we       (dma_we)
+    );
+
+    // =========================================================================
+    // VIDEO SUBSYSTEM
+    // =========================================================================
+    reg sys_we_last;
     always @(posedge clk_25mhz) begin
-        if (sys_reset) cpu_re_last <= 1'b0;
-        else           cpu_re_last <= cpu_read_active;
+        if (sys_reset) sys_we_last <= 1'b0;
+        else           sys_we_last <= sys_write_en;
     end
-    wire cpu_read_pulse = cpu_read_active && !cpu_re_last;
-    wire ppu_read_n  = ~cpu_read_pulse;
+    wire sys_write_pulse = sys_write_en && !sys_we_last;
+    wire ppu_write_n = ~(sys_write_pulse && ppu_cs);
+
+    wire sys_read_active = ~sys_write_en && ppu_cs;
+    reg sys_re_last;
+    always @(posedge clk_25mhz) begin
+        if (sys_reset) sys_re_last <= 1'b0;
+        else           sys_re_last <= sys_read_active;
+    end
+    wire sys_read_pulse = sys_read_active && !sys_re_last;
+    wire ppu_read_n  = ~sys_read_pulse;
     
     wire [7:0]  ppu_dbg_ctrl;
     wire [7:0]  ppu_dbg_mask;
@@ -151,14 +187,14 @@ module nes_top (
     video_subsystem_top video_engine (
         .clk_25mhz      (clk_25mhz),
         .reset          (sys_reset),
-        .cpu_addr       (cpu_address[2:0]),
-        .cpu_data_in    (cpu_data_out),
+        .cpu_addr       (sys_address[2:0]),
+        .cpu_data_in    (sys_data_out),
         .cpu_data_out   (ppu_data_out),
         .cpu_read_n     (ppu_read_n),
         .cpu_write_n    (ppu_write_n),
         
-        .chr_addr       (chr_addr),      // Out to Cartridge
-        .chr_data_in    (chr_data_out),  // In from Cartridge
+        .chr_addr       (chr_addr),      
+        .chr_data_in    (chr_data_out),  
         .chr_read_n     (chr_read_n),    
         
         .vga_r          (VGA_R),
@@ -175,14 +211,14 @@ module nes_top (
         .dbg_vram_addr  (dbg_vram_addr),
         .dbg_palette_00 (dbg_palette_00),
         .dbg_nt_latch   (dbg_nt_latch),
-        .nmi_out        (ppu_nmi),
+        .nmi_out        (ppu_nmi)
     );
 
     // =========================================================================
     // TELEMETRY
     // =========================================================================
     assign LEDR[9] = pll_locked;
-    assign LEDR[8] = cpu_write_pulse; 
+    assign LEDR[8] = dma_active; // Switch LED 8 to show DMA actively firing!
     assign LEDR[7] = ppu_cs; 
     assign LEDR[6] = 1'b0;
     assign LEDR[5:0] = cpu_state; 

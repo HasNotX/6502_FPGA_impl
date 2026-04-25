@@ -78,8 +78,32 @@ module ppu_core (
     assign chr_read_n  = ~(target_addr < 15'h2000);
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Subsystem Instantiations
+    // Subsystem Instantiations (Inside ppu_core.v)
     // ─────────────────────────────────────────────────────────────────────────
+    wire [7:0] scroll_x;
+    wire [7:0] scroll_y;
+
+    ppu_registers regs_inst (
+        .clk                (clk),
+        .reset              (reset),
+        .vblank_pulse       (vblank_pulse),
+        .clear_vblank_pulse (clear_vblank_pulse),
+        .sprite0_hit_pulse  (true_sprite0_hit), 
+        .cpu_addr           (cpu_addr),
+        .cpu_data_in        (cpu_data_in),
+        .cpu_read_n         (cpu_read_n),
+        .cpu_write_n        (cpu_write_n),
+        .cpu_data_out       (cpu_data_out),
+        .mem_data_in        (internal_mem_data_out), 
+        .ctrl_out           (ppu_ctrl),
+        .mask_out           (ppu_mask),
+        .vram_addr_out      (vram_addr),
+        .oam_addr_out       (cpu_oam_addr),
+        .nmi_out            (nmi_out),
+        .scroll_x_out       (scroll_x),    // NEW: Expose Scroll X
+        .scroll_y_out       (scroll_y)     // NEW: Expose Scroll Y
+    );
+
     ppu_sprite_render spr_render (
         .clk                (clk),
         .reset              (reset),
@@ -95,25 +119,6 @@ module ppu_core (
         .sprite_bg_priority (sprite_bg_priority),
         .sprite0_active     (sprite0_active),
         .is_fetching        (is_sprite_fetch)  // Plumbed to Arbitrator!
-    );
-
-    ppu_registers regs_inst (
-        .clk                (clk),
-        .reset              (reset),
-        .vblank_pulse       (vblank_pulse),
-        .clear_vblank_pulse (clear_vblank_pulse),
-        .sprite0_hit_pulse  (true_sprite0_hit), // Driven by true pixel collision
-        .cpu_addr           (cpu_addr),
-        .cpu_data_in        (cpu_data_in),
-        .cpu_read_n         (cpu_read_n),
-        .cpu_write_n        (cpu_write_n),
-        .cpu_data_out       (cpu_data_out),
-        .mem_data_in        (internal_mem_data_out), 
-        .ctrl_out           (ppu_ctrl),
-        .mask_out           (ppu_mask),
-        .vram_addr_out      (vram_addr),
-        .oam_addr_out       (cpu_oam_addr),
-        .nmi_out            (nmi_out)
     );
 
     vram_2k nametable_ram (
@@ -165,7 +170,9 @@ module ppu_registers (
     output reg  [7:0]  mask_out,
     output reg  [14:0] vram_addr_out,
     output reg  [7:0]  oam_addr_out,
-    output wire        nmi_out
+    output wire        nmi_out,
+    output wire [7:0]  scroll_x_out,  // NEW
+    output wire [7:0]  scroll_y_out   // NEW
 );
 
     reg w_toggle; 
@@ -175,6 +182,8 @@ module ppu_registers (
     reg [7:0] read_buffer; 
 
     assign nmi_out = status_reg[7] & ctrl_out[7];
+    assign scroll_x_out = scroll_x;  // NEW
+    assign scroll_y_out = scroll_y;  // NEW
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
