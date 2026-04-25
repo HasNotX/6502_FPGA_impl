@@ -1,8 +1,8 @@
 /*
  * File: ppu_sprite_render.v
  * Description: HIGH-SPEED OAM Sprite Evaluation and Rendering Pipeline.
- * Implements an industrial-grade Two-Phase pipeline with explicit 
- * Secondary OAM Double-Buffering to prevent live rendering corruption.
+ * Corrected for 2-cycle M10K BRAM read latency, 9-bit coordinate wrapping,
+ * and true-to-silicon 1-scanline Y-coordinate delays.
  */
 
 module ppu_sprite_render (
@@ -34,11 +34,9 @@ module ppu_sprite_render (
         last_nes_x       <= nes_x;
     end
     
-    wire hblank_start = !nes_visible && last_nes_visible;
+    wire hblank_start  = !nes_visible && last_nes_visible;
     wire start_of_line = nes_visible && !last_nes_visible;
-    
-    // Trigger OAM scanning safely during active display
-    wire eval_start   = nes_visible && (nes_x == 8'd64) && (last_nes_x == 8'd63);
+    wire eval_start    = nes_visible && (nes_x == 8'd64) && (last_nes_x == 8'd63);
 
     // -------------------------------------------------------------------------
     // Phase 1 & 2 Registers: Evaluation (Secondary OAM)
@@ -85,11 +83,14 @@ module ppu_sprite_render (
                S_EVAL_X_LATCH    = 5'd9,
                S_EVAL_DONE       = 5'd10, 
                
+               // Phase 2: Fully Padded Wait States for M10K Latency
                S_FETCH_REQ       = 5'd11,
-               S_FETCH_LO_WAIT   = 5'd12,
-               S_FETCH_LO_LATCH  = 5'd13,
-               S_FETCH_HI_WAIT   = 5'd14,
-               S_FETCH_HI_LATCH  = 5'd15;
+               S_FETCH_LO_WAIT1  = 5'd12,
+               S_FETCH_LO_WAIT2  = 5'd13,
+               S_FETCH_LO_LATCH  = 5'd14,
+               S_FETCH_HI_WAIT1  = 5'd15,
+               S_FETCH_HI_WAIT2  = 5'd16,
+               S_FETCH_HI_LATCH  = 5'd17;
 
     assign is_fetching = (eval_state >= S_FETCH_REQ && eval_state <= S_FETCH_HI_LATCH);
 
@@ -121,8 +122,10 @@ module ppu_sprite_render (
                 
                 S_EVAL_Y_CHK: begin
                     latched_y <= oam_data;
-                    if ({1'b0, next_nes_y} >= {1'b0, oam_data} && 
-                        {1'b0, next_nes_y} < ({1'b0, oam_data} + 9'd8) && 
+                    
+                    // Hardware Accurate: Sprites delayed by 1 scanline (+1 to +9 bounds)
+                    if ({1'b0, next_nes_y} >= ({1'b0, oam_data} + 9'd1) && 
+                        {1'b0, next_nes_y} <  ({1'b0, oam_data} + 9'd9) && 
                         oam_data < 8'd240 && 
                         eval_sprite_count < 4'd8) begin
                         
@@ -158,7 +161,7 @@ module ppu_sprite_render (
                     eval_spr_x[eval_sprite_count]       <= oam_data;
                     eval_spr_attr[eval_sprite_count]    <= latched_attr;
                     eval_spr_tile[eval_sprite_count]    <= latched_tile;
-                    eval_spr_y_diff[eval_sprite_count]  <= (next_nes_y - latched_y);
+                    eval_spr_y_diff[eval_sprite_count]  <= (next_nes_y - latched_y - 8'd1);
                     eval_spr_is_zero[eval_sprite_count] <= (oam_scan_idx == 6'd0);
                     
                     eval_sprite_count <= eval_sprite_count + 4'd1;
@@ -189,17 +192,22 @@ module ppu_sprite_render (
                     else
                         chr_addr <= base_pat_addr[13:0] | ({6'd0, eval_spr_tile[fetch_idx]} << 4) | eval_spr_y_diff[fetch_idx];
                         
-                    eval_state <= S_FETCH_LO_WAIT;
+                    eval_state <= S_FETCH_LO_WAIT1;
                 end
                 
-                S_FETCH_LO_WAIT: eval_state <= S_FETCH_LO_LATCH;
+                // Padded Wait States for M10K 2-Cycle Registered Outputs
+                S_FETCH_LO_WAIT1: eval_state <= S_FETCH_LO_WAIT2;
+                S_FETCH_LO_WAIT2: eval_state <= S_FETCH_LO_LATCH;
+                
                 S_FETCH_LO_LATCH: begin
                     eval_spr_pat_lo[fetch_idx] <= chr_data;
                     chr_addr <= chr_addr + 14'd8; 
-                    eval_state <= S_FETCH_HI_WAIT;
+                    eval_state <= S_FETCH_HI_WAIT1;
                 end
                 
-                S_FETCH_HI_WAIT: eval_state <= S_FETCH_HI_LATCH;
+                S_FETCH_HI_WAIT1: eval_state <= S_FETCH_HI_WAIT2;
+                S_FETCH_HI_WAIT2: eval_state <= S_FETCH_HI_LATCH;
+                
                 S_FETCH_HI_LATCH: begin
                     eval_spr_pat_hi[fetch_idx]  <= chr_data;
                     
@@ -250,7 +258,6 @@ module ppu_sprite_render (
     reg [7:0] diff;
     reg [2:0] x_offset;
     
-    // Verilog-2001 compliant structure (Variables explicitly declared outside block)
     always @(*) begin
         active_color    = 4'b0000;
         active_priority = 1'b0;
@@ -261,10 +268,13 @@ module ppu_sprite_render (
         if (nes_visible) begin
             for (i = 7; i >= 0; i = i - 1) begin
                 if (i < active_sprite_count) begin
-                    if (nes_x >= active_spr_x[i] && nes_x < (active_spr_x[i] + 8'd8)) begin
+                    
+                    // 9-Bit Math protects against right-edge disappearance overflow
+                    if ({1'b0, nes_x} >= {1'b0, active_spr_x[i]} && 
+                        {1'b0, nes_x} <  ({1'b0, active_spr_x[i]} + 9'd8)) begin
                         
                         diff = nes_x - active_spr_x[i];
-                        if (active_spr_attr[i][6]) // Horizontal Flip
+                        if (active_spr_attr[i][6]) 
                             x_offset = diff[2:0];
                         else
                             x_offset = 3'd7 - diff[2:0];
