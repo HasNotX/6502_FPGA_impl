@@ -26,6 +26,7 @@ module MOS_6502_CPU (
     wire [7:0]  push_data;
     
     wire nmi_active;                  // NEW: Flag from FSM
+    wire [5:0] fsm_state;
 
     assign data_out = push_data;
     assign current_pc = PC;
@@ -49,7 +50,6 @@ module MOS_6502_CPU (
         endcase
     end
 
-    wire [5:0] fsm_state;
     wire is_reset_vec = (fsm_state == 6'd25 || fsm_state == 6'd26 ||
                          fsm_state == 6'd27 || fsm_state == 6'd28);
     wire is_vec_lo    = (fsm_state == 6'd25 || fsm_state == 6'd26 ||  

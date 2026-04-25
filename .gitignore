@@ -141,3 +141,5 @@ $RECYCLE.BIN/
 
 # Uncomment to track your top-level IP catalog files
 # !*.qip
+
+simulation_telemetry.txt

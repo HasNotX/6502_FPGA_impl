@@ -35,6 +35,7 @@ module video_subsystem_top (
     wire [7:0] nes_x, nes_y;
     assign dbg_nes_x = nes_x;
     assign dbg_nes_y = nes_y;
+    assign dbg_status = 8'h00;
 
     wire nes_visible;
 
@@ -142,7 +143,7 @@ module video_subsystem_top (
         .dbg_mask           (dbg_mask),
         .dbg_vram_addr      (dbg_vram_addr),
         .dbg_palette_00     (dbg_palette_00),
-        .dbg_status         (dbg_status),
+        /*.dbg_status         (dbg_status),*/
         .nes_x              (nes_x),
         .nes_y              (nes_y),
         .nes_visible        (nes_visible),
