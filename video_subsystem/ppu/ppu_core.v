@@ -357,7 +357,4 @@ module oam_ram (
         dout <= ram[addr];
     end
 
-
-    
-
 endmodule

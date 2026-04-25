@@ -26,30 +26,6 @@ module cpu_fsm (
     reg [5:0] state;
     assign fsm_state_out = state;
 
-    // =========================================================================
-    // NMI Latch Logic (Edge Triggered)
-    // =========================================================================
-    reg nmi_pending;
-    reg nmi_active;
-    assign nmi_active_out = nmi_active;
-    
-    // Create a strict 1-cycle edge detector for the incoming NMI
-    reg last_nmi_in;
-    always @(posedge clk or posedge reset) begin
-        if (reset) last_nmi_in <= 1'b0;
-        else       last_nmi_in <= nmi_in;
-    end
-    wire nmi_edge = nmi_in && !last_nmi_in;
-    
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            nmi_pending <= 1'b0;
-        end else begin
-            if (nmi_edge) nmi_pending <= 1'b1;
-            else if (cpu_ce && state == S_FETCH && nmi_pending) nmi_pending <= 1'b0;
-        end
-    end
-
     localparam S_FETCH             = 6'd0,
                S_FETCH_WAIT        = 6'd7,
                S_FETCH2            = 6'd1,
@@ -124,6 +100,31 @@ module cpu_fsm (
 
     wire [15:0] jsr_ret_addr = PC - 16'd1;
     wire [15:0] brk_ret_addr = PC + 16'd1;
+
+    // =========================================================================
+    // NMI Latch Logic (Edge Triggered)
+    // =========================================================================
+    reg nmi_pending;
+    reg nmi_active;
+    assign nmi_active_out = nmi_active;
+    
+    // Create a strict 1-cycle edge detector for the incoming NMI
+    reg last_nmi_in;
+    always @(posedge clk or posedge reset) begin
+        if (reset) last_nmi_in <= 1'b0;
+        else       last_nmi_in <= nmi_in;
+    end
+    wire nmi_edge = nmi_in && !last_nmi_in;
+    
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            nmi_pending <= 1'b0;
+        end else begin
+            if (nmi_edge) nmi_pending <= 1'b1;
+            else if (cpu_ce && state == S_FETCH && nmi_pending) nmi_pending <= 1'b0;
+        end
+    end
+
 
     wire is_store = (inst_reg == 8'h85 || inst_reg == 8'h95 ||
                      inst_reg == 8'h8D || inst_reg == 8'h9D ||
