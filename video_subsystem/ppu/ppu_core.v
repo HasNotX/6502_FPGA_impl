@@ -30,6 +30,9 @@ module ppu_core (
     
     input  wire [4:0]  dac_palette_addr,
     output wire [7:0]  dac_palette_data,
+
+    output wire [7:0]   dbg_scroll_x,
+    output wire [7:0]   dbg_scroll_y,
     
     // NEW: Sprite subsystem connections
     input  wire [7:0]  nes_y,
@@ -82,6 +85,9 @@ module ppu_core (
     // ─────────────────────────────────────────────────────────────────────────
     wire [7:0] scroll_x;
     wire [7:0] scroll_y;
+
+    assign dbg_scroll_x = scroll_x;
+    assign dbg_scroll_y = scroll_y;
 
     ppu_registers regs_inst (
         .clk                (clk),
