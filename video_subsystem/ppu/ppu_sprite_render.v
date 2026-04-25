@@ -1,8 +1,8 @@
 /*
  * File: ppu_sprite_render.v
  * Description: HIGH-SPEED OAM Sprite Evaluation and Rendering Pipeline.
- * Corrected with an active_render_y guard to prevent double-buffer tearing 
- * caused by VGA 2x vertical integer scaling sweeps.
+ * Architected with ultra-padded wait states, double buffering, and 
+ * correctly mapped OAM byte fetching.
  */
 
 module ppu_sprite_render (
@@ -27,16 +27,13 @@ module ppu_sprite_render (
 );
 
     reg last_nes_visible;
-    reg [7:0] last_nes_x;
-    
     always @(posedge clk) begin
         last_nes_visible <= nes_visible;
-        last_nes_x       <= nes_x;
     end
     
     wire hblank_start  = !nes_visible && last_nes_visible;
     wire start_of_line = nes_visible && !last_nes_visible;
-    wire eval_start    = nes_visible && (nes_x == 8'd64) && (last_nes_x == 8'd63);
+    wire eval_start    = start_of_line;
 
     // -------------------------------------------------------------------------
     // Phase 1 & 2 Registers: Evaluation (Secondary OAM)
@@ -62,7 +59,7 @@ module ppu_sprite_render (
     
     reg [5:0] oam_scan_idx;
     reg [3:0] fetch_idx;
-    reg [4:0] eval_state;
+    reg [5:0] eval_state; 
 
     reg [7:0] latched_y;
     reg [7:0] latched_tile;
@@ -71,25 +68,37 @@ module ppu_sprite_render (
     wire [14:0] base_pat_addr = {2'b00, ppu_ctrl_reg[3], 12'd0};
     wire [7:0]  next_nes_y    = nes_y + 8'd1;
 
-    localparam S_IDLE            = 5'd0,
-               S_EVAL_Y_REQ      = 5'd1,
-               S_EVAL_Y_WAIT     = 5'd2,
-               S_EVAL_Y_CHK      = 5'd3,
-               S_EVAL_TILE_WAIT  = 5'd4,
-               S_EVAL_TILE_LATCH = 5'd5,
-               S_EVAL_ATTR_WAIT  = 5'd6,
-               S_EVAL_ATTR_LATCH = 5'd7,
-               S_EVAL_X_WAIT     = 5'd8,
-               S_EVAL_X_LATCH    = 5'd9,
-               S_EVAL_DONE       = 5'd10, 
+    localparam S_IDLE            = 6'd0,
                
-               S_FETCH_REQ       = 5'd11,
-               S_FETCH_LO_WAIT1  = 5'd12,
-               S_FETCH_LO_WAIT2  = 5'd13,
-               S_FETCH_LO_LATCH  = 5'd14,
-               S_FETCH_HI_WAIT1  = 5'd15,
-               S_FETCH_HI_WAIT2  = 5'd16,
-               S_FETCH_HI_LATCH  = 5'd17;
+               S_EVAL_Y_REQ      = 6'd1,
+               S_EVAL_Y_WAIT1    = 6'd2,
+               S_EVAL_Y_WAIT2    = 6'd3,
+               S_EVAL_Y_CHK      = 6'd4,
+               
+               S_EVAL_TILE_WAIT1 = 6'd5,
+               S_EVAL_TILE_WAIT2 = 6'd6,
+               S_EVAL_TILE_LATCH = 6'd7,
+               
+               S_EVAL_ATTR_WAIT1 = 6'd8,
+               S_EVAL_ATTR_WAIT2 = 6'd9,
+               S_EVAL_ATTR_LATCH = 6'd10,
+               
+               S_EVAL_X_WAIT1    = 6'd11,
+               S_EVAL_X_WAIT2    = 6'd12,
+               S_EVAL_X_LATCH    = 6'd13,
+               
+               S_EVAL_DONE       = 6'd14, 
+               
+               S_FETCH_REQ       = 6'd15,
+               S_FETCH_LO_WAIT1  = 6'd16,
+               S_FETCH_LO_WAIT2  = 6'd17,
+               S_FETCH_LO_WAIT3  = 6'd18,
+               S_FETCH_LO_LATCH  = 6'd19,
+               
+               S_FETCH_HI_WAIT1  = 6'd20,
+               S_FETCH_HI_WAIT2  = 6'd21,
+               S_FETCH_HI_WAIT3  = 6'd22,
+               S_FETCH_HI_LATCH  = 6'd23;
 
     assign is_fetching = (eval_state >= S_FETCH_REQ && eval_state <= S_FETCH_HI_LATCH);
 
@@ -113,11 +122,13 @@ module ppu_sprite_render (
                     end
                 end
                 
+                // --- Byte 0: Y Coordinate ---
                 S_EVAL_Y_REQ: begin
                     oam_addr   <= {oam_scan_idx, 2'b00};
-                    eval_state <= S_EVAL_Y_WAIT;
+                    eval_state <= S_EVAL_Y_WAIT1;
                 end
-                S_EVAL_Y_WAIT: eval_state <= S_EVAL_Y_CHK;
+                S_EVAL_Y_WAIT1: eval_state <= S_EVAL_Y_WAIT2;
+                S_EVAL_Y_WAIT2: eval_state <= S_EVAL_Y_CHK;
                 
                 S_EVAL_Y_CHK: begin
                     latched_y <= oam_data;
@@ -128,33 +139,39 @@ module ppu_sprite_render (
                         eval_sprite_count < 4'd8) begin
                         
                         oam_addr   <= {oam_scan_idx, 2'b01};
-                        eval_state <= S_EVAL_TILE_WAIT;
+                        eval_state <= S_EVAL_TILE_WAIT1;
                     end else begin
                         if (oam_scan_idx == 6'd63) begin
                             eval_state <= S_EVAL_DONE;
                         end else begin
                             oam_scan_idx <= oam_scan_idx + 6'd1;
                             oam_addr     <= {oam_scan_idx + 6'd1, 2'b00};
-                            eval_state   <= S_EVAL_Y_WAIT;
+                            eval_state   <= S_EVAL_Y_WAIT1;
                         end
                     end
                 end
                 
-                S_EVAL_TILE_WAIT: eval_state <= S_EVAL_TILE_LATCH;
+                // --- Byte 1: Tile Index ---
+                S_EVAL_TILE_WAIT1: eval_state <= S_EVAL_TILE_WAIT2;
+                S_EVAL_TILE_WAIT2: eval_state <= S_EVAL_TILE_LATCH;
                 S_EVAL_TILE_LATCH: begin
                     latched_tile <= oam_data;
-                    oam_addr     <= {oam_scan_idx, 2'b10};
-                    eval_state   <= S_EVAL_ATTR_WAIT;
+                    oam_addr     <= {oam_scan_idx, 2'b10}; // FIX: 2'b10 is Attributes
+                    eval_state   <= S_EVAL_ATTR_WAIT1;
                 end
                 
-                S_EVAL_ATTR_WAIT: eval_state <= S_EVAL_ATTR_LATCH;
+                // --- Byte 2: Attributes ---
+                S_EVAL_ATTR_WAIT1: eval_state <= S_EVAL_ATTR_WAIT2;
+                S_EVAL_ATTR_WAIT2: eval_state <= S_EVAL_ATTR_LATCH;
                 S_EVAL_ATTR_LATCH: begin
                     latched_attr <= oam_data;
-                    oam_addr     <= {oam_scan_idx, 2'b11};
-                    eval_state   <= S_EVAL_X_WAIT;
+                    oam_addr     <= {oam_scan_idx, 2'b11}; // FIX: 2'b11 is X Coordinate
+                    eval_state   <= S_EVAL_X_WAIT1;
                 end
                 
-                S_EVAL_X_WAIT: eval_state <= S_EVAL_X_LATCH;
+                // --- Byte 3: X Coordinate ---
+                S_EVAL_X_WAIT1: eval_state <= S_EVAL_X_WAIT2;
+                S_EVAL_X_WAIT2: eval_state <= S_EVAL_X_LATCH;
                 S_EVAL_X_LATCH: begin
                     eval_spr_x[eval_sprite_count]       <= oam_data;
                     eval_spr_attr[eval_sprite_count]    <= latched_attr;
@@ -169,12 +186,13 @@ module ppu_sprite_render (
                     end else begin
                         oam_scan_idx <= oam_scan_idx + 6'd1;
                         oam_addr     <= {oam_scan_idx + 6'd1, 2'b00};
-                        eval_state   <= S_EVAL_Y_WAIT;
+                        eval_state   <= S_EVAL_Y_WAIT1;
                     end
                 end
                 
+                // --- Safe HBlank Hand-off ---
                 S_EVAL_DONE: begin
-                    if (hblank_start) begin
+                    if (!nes_visible) begin
                         fetch_idx <= 4'd0;
                         if (eval_sprite_count > 4'd0) begin
                             eval_state <= S_FETCH_REQ;
@@ -184,6 +202,7 @@ module ppu_sprite_render (
                     end
                 end
                 
+                // --- CHR Pattern Fetching ---
                 S_FETCH_REQ: begin
                     if (eval_spr_attr[fetch_idx][7]) 
                         chr_addr <= base_pat_addr[13:0] | ({6'd0, eval_spr_tile[fetch_idx]} << 4) | (7 - eval_spr_y_diff[fetch_idx]);
@@ -194,7 +213,8 @@ module ppu_sprite_render (
                 end
                 
                 S_FETCH_LO_WAIT1: eval_state <= S_FETCH_LO_WAIT2;
-                S_FETCH_LO_WAIT2: eval_state <= S_FETCH_LO_LATCH;
+                S_FETCH_LO_WAIT2: eval_state <= S_FETCH_LO_WAIT3;
+                S_FETCH_LO_WAIT3: eval_state <= S_FETCH_LO_LATCH;
                 
                 S_FETCH_LO_LATCH: begin
                     eval_spr_pat_lo[fetch_idx] <= chr_data;
@@ -203,7 +223,8 @@ module ppu_sprite_render (
                 end
                 
                 S_FETCH_HI_WAIT1: eval_state <= S_FETCH_HI_WAIT2;
-                S_FETCH_HI_WAIT2: eval_state <= S_FETCH_HI_LATCH;
+                S_FETCH_HI_WAIT2: eval_state <= S_FETCH_HI_WAIT3;
+                S_FETCH_HI_WAIT3: eval_state <= S_FETCH_HI_LATCH;
                 
                 S_FETCH_HI_LATCH: begin
                     eval_spr_pat_hi[fetch_idx]  <= chr_data;
@@ -236,8 +257,6 @@ module ppu_sprite_render (
                 active_spr_pat_hi[j]  <= 8'd0;
                 active_spr_is_zero[j] <= 1'b0;
             end
-            
-        // GUARDBAND: Only transfer arrays on the FIRST sweep of a new nes_y
         end else if (start_of_line && nes_y != active_render_y) begin
             active_render_y <= nes_y;
             active_sprite_count <= eval_sprite_count;
