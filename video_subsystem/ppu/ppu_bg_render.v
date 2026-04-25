@@ -1,10 +1,3 @@
-/*
- * File: ppu_bg_render.v
- * Description: Phase-Shifted Background Renderer.
- * Aligns the memory fetch sequences dynamically with the scrolled coordinate
- * to perform perfect fine-pixel scrolling without a 16-bit shift register.
- */
-
 module ppu_bg_render (
     input  wire        clk,
     input  wire        reset,
@@ -13,8 +6,11 @@ module ppu_bg_render (
     input  wire [7:0]  nes_y,
     input  wire        nes_visible,
     input  wire [7:0]  ppu_ctrl_reg,
-    input  wire [7:0]  scroll_x,
-    input  wire [7:0]  scroll_y,
+    
+    input  wire [7:0]  loopy_scroll_x,
+    input  wire [7:0]  loopy_scroll_y,
+    input  wire        loopy_nt_x,
+    input  wire        loopy_nt_y,
 
     output reg  [14:0] bg_mem_addr,
     input  wire [7:0]  bg_mem_data,
@@ -28,23 +24,23 @@ module ppu_bg_render (
     wire nes_pixel_tick = (nes_x != last_nes_x);
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Phase-Shifted Coordinates
+    // Hardware-Accurate Phase-Shifted Coordinates
     // ─────────────────────────────────────────────────────────────────────────
-    wire [8:0] true_x = {1'b0, nes_x} + {1'b0, scroll_x};
-    wire [8:0] true_y = {1'b0, nes_y} + {1'b0, scroll_y};
+    wire [8:0] true_x = {1'b0, nes_x} + {1'b0, loopy_scroll_x};
+    wire [8:0] true_y = {1'b0, nes_y} + {1'b0, loopy_scroll_y};
 
     wire [8:0] fetch_y = (true_y >= 9'd240) ? (true_y - 9'd240) : true_y;
     wire nt_y_cross    = (true_y >= 9'd240);
 
-    // Look ahead 8 pixels to pre-fetch the upcoming tile
     wire [8:0] fetch_x_sum = true_x + 9'd8;
     wire [7:0] fetch_x     = fetch_x_sum[7:0];
     wire nt_x_cross        = fetch_x_sum[8];
 
-    // Dynamically calculate Nametable Base
-    wire base_nt_bit_x = ppu_ctrl_reg[0] ^ nt_x_cross;
-    wire base_nt_bit_y = ppu_ctrl_reg[1] ^ nt_y_cross;
-    wire [14:0] active_nt_base = 15'h2000 | ({13'd0, base_nt_bit_y, base_nt_bit_x} << 10);
+    // Combine the base nametable selection with the crossover logic
+    wire final_nt_x = loopy_nt_x ^ nt_x_cross;
+    wire final_nt_y = loopy_nt_y ^ nt_y_cross;
+
+    wire [14:0] active_nt_base = 15'h2000 | ({13'd0, final_nt_y, final_nt_x} << 10);
     wire [14:0] base_pat_addr  = {2'b00, ppu_ctrl_reg[4], 12'd0};
 
     reg [3:0] fetch_state; 
@@ -60,7 +56,6 @@ module ppu_bg_render (
     reg [7:0] active_pat_hi;
     reg [1:0] active_attr;
 
-    // Enable pre-fetching during the late HBlank period
     wire is_active_window = nes_visible || (nes_x >= 8'd304);
 
     always @(posedge clk or posedge reset) begin
@@ -68,7 +63,6 @@ module ppu_bg_render (
             fetch_state <= 4'd0;
             bg_mem_addr <= 15'd0;
         end else if (is_active_window) begin
-            // Trigger fetch exactly when the scrolled coordinate hits a tile boundary
             if (nes_pixel_tick && true_x[2:0] == 3'd0) begin
                 fetch_state <= 4'd1;
             end
@@ -128,9 +122,7 @@ module ppu_bg_render (
         end
     end
 
-    // Use the scrolled coordinate to mux the inner pixel
     wire [2:0] bit_sel = 3'd7 - true_x[2:0];
-    
     wire pat_bit_0 = active_pat_lo[bit_sel];
     wire pat_bit_1 = active_pat_hi[bit_sel];
     

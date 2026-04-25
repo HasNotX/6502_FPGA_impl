@@ -93,8 +93,10 @@ module video_subsystem_top (
     
     wire true_sprite0_hit = nes_visible && bg_opaque && spr_opaque && spr0_active;
 
-    wire [7:0] scroll_x;
-    wire [7:0] scroll_y;
+    wire [7:0] loopy_scroll_x;
+    wire [7:0] loopy_scroll_y;
+    wire       loopy_nt_x;
+    wire       loopy_nt_y;
 
     ppu_bg_render bg_render (
         .clk             (clk_25mhz),
@@ -103,8 +105,10 @@ module video_subsystem_top (
         .nes_y           (nes_y),
         .nes_visible     (is_rendering), 
         .ppu_ctrl_reg    (dbg_ctrl), 
-        .scroll_x        (scroll_x),      // Plumbed!
-        .scroll_y        (scroll_y),      // Plumbed!
+        .loopy_scroll_x  (loopy_scroll_x),  // NEW
+        .loopy_scroll_y  (loopy_scroll_y),  // NEW
+        .loopy_nt_x      (loopy_nt_x),      // NEW
+        .loopy_nt_y      (loopy_nt_y),      // NEW
         .bg_mem_addr     (bg_mem_addr),
         .bg_mem_data     (bg_mem_data),
         .pixel_color_idx (bg_color_idx),
@@ -145,9 +149,10 @@ module video_subsystem_top (
         .sprite_bg_priority (spr_bg_priority),
         .sprite0_active     (spr0_active),
         .true_sprite0_hit   (true_sprite0_hit),
-        
-        .dbg_scroll_x       (scroll_x),    // Connect exposing port
-        .dbg_scroll_y       (scroll_y)     // Connect exposing port
+        .loopy_scroll_x     (loopy_scroll_x), // NEW
+        .loopy_scroll_y     (loopy_scroll_y), // NEW
+        .loopy_nt_x         (loopy_nt_x),     // NEW
+        .loopy_nt_y         (loopy_nt_y)      // NEW
     );
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;

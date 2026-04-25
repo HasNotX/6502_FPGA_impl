@@ -33,6 +33,11 @@ module ppu_core (
 
     output wire [7:0]   dbg_scroll_x,
     output wire [7:0]   dbg_scroll_y,
+
+    output wire [7:0]  loopy_scroll_x,
+    output wire [7:0]  loopy_scroll_y,
+    output wire        loopy_nt_x,
+    output wire        loopy_nt_y,
     
     // NEW: Sprite subsystem connections
     input  wire [7:0]  nes_y,
@@ -106,8 +111,10 @@ module ppu_core (
         .vram_addr_out      (vram_addr),
         .oam_addr_out       (cpu_oam_addr),
         .nmi_out            (nmi_out),
-        .scroll_x_out       (scroll_x),    // NEW: Expose Scroll X
-        .scroll_y_out       (scroll_y)     // NEW: Expose Scroll Y
+        .loopy_scroll_x     (loopy_scroll_x), // NEW
+        .loopy_scroll_y     (loopy_scroll_y), // NEW
+        .loopy_nt_x         (loopy_nt_x),     // NEW
+        .loopy_nt_y         (loopy_nt_y)      // NEW
     );
 
     ppu_sprite_render spr_render (
@@ -174,37 +181,52 @@ module ppu_registers (
     output reg  [7:0]  cpu_data_out,
     output reg  [7:0]  ctrl_out,
     output reg  [7:0]  mask_out,
-    output reg  [14:0] vram_addr_out,
+    output wire [14:0] vram_addr_out,
     output reg  [7:0]  oam_addr_out,
     output wire        nmi_out,
-    output wire [7:0]  scroll_x_out,  // NEW
-    output wire [7:0]  scroll_y_out   // NEW
+    
+    // NEW: Decoded Loopy Signals
+    output wire [7:0]  loopy_scroll_x,
+    output wire [7:0]  loopy_scroll_y,
+    output wire        loopy_nt_x,
+    output wire        loopy_nt_y
 );
 
-    reg w_toggle; 
     reg [7:0] status_reg;
-    reg [7:0] scroll_x;
-    reg [7:0] scroll_y;
     reg [7:0] read_buffer; 
 
+    // The Unified "Loopy" Registers
+    reg [14:0] v;       // Current VRAM address (15 bits)
+    reg [14:0] t;       // Temporary VRAM address (15 bits)
+    reg [2:0]  fine_x;  // Fine X scroll (3 bits)
+    reg        w;       // First/Second write toggle (1 bit)
+
     assign nmi_out = status_reg[7] & ctrl_out[7];
-    assign scroll_x_out = scroll_x;  // NEW
-    assign scroll_y_out = scroll_y;  // NEW
+    
+    // Dynamically decode the V register for the renderer
+    assign vram_addr_out  = v;
+    assign loopy_scroll_x = {v[4:0], fine_x};
+    assign loopy_scroll_y = {v[9:5], v[14:12]};
+    assign loopy_nt_x     = v[10];
+    assign loopy_nt_y     = v[11];
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            w_toggle      <= 1'b0;
+            w             <= 1'b0;
             ctrl_out      <= 8'h00;
             mask_out      <= 8'h00;
             status_reg    <= 8'h00;
             oam_addr_out  <= 8'h00;
-            vram_addr_out <= 15'h0000;
             read_buffer   <= 8'h00;
+            v             <= 15'd0;
+            t             <= 15'd0;
+            fine_x        <= 3'd0;
         end else begin
         
             if (clear_vblank_pulse) begin
                 status_reg[7] <= 1'b0;
                 status_reg[6] <= 1'b0; 
+                v <= t; // HARDWARE FIX: Camera resets to 't' at the start of every frame!
             end
             
             if (vblank_pulse) begin
@@ -215,56 +237,65 @@ module ppu_registers (
                 status_reg[6] <= 1'b1;
             end
 
+            // CPU Write Logic
             if (!cpu_write_n) begin
                 case (cpu_addr)
-                    3'd0: ctrl_out <= cpu_data_in;        
-                    3'd1: mask_out <= cpu_data_in;        
+                    3'd0: begin 
+                        ctrl_out <= cpu_data_in;        
+                        t[11:10] <= cpu_data_in[1:0]; // Base nametable updates 't'!
+                    end
+                    3'd1: mask_out     <= cpu_data_in;        
                     3'd3: oam_addr_out <= cpu_data_in;    
                     3'd4: oam_addr_out <= oam_addr_out + 1'b1; 
                     
-                    3'd5: begin                           
-                        if (!w_toggle) begin
-                            scroll_x <= cpu_data_in;
-                            w_toggle <= 1'b1;
+                    3'd5: begin // $2005 PPUSCROLL
+                        if (!w) begin
+                            t[4:0] <= cpu_data_in[7:3];
+                            fine_x <= cpu_data_in[2:0];
+                            w      <= 1'b1;
                         end else begin
-                            scroll_y <= cpu_data_in;
-                            w_toggle <= 1'b0;
+                            t[9:5]   <= cpu_data_in[7:3];
+                            t[14:12] <= cpu_data_in[2:0];
+                            w        <= 1'b0;
                         end
                     end
                     
-                    3'd6: begin                           
-                        if (!w_toggle) begin
-                            vram_addr_out[13:8] <= cpu_data_in[5:0]; 
-                            w_toggle <= 1'b1;
+                    3'd6: begin // $2006 PPUADDR
+                        if (!w) begin
+                            t[13:8] <= cpu_data_in[5:0];
+                            t[14]   <= 1'b0;
+                            w       <= 1'b1;
                         end else begin
-                            vram_addr_out[7:0] <= cpu_data_in;       
-                            w_toggle <= 1'b0;
+                            t[7:0] <= cpu_data_in;
+                            v      <= {t[14:8], cpu_data_in}; // Snap v to t!
+                            w      <= 1'b0;
                         end
                     end
                     
-                    3'd7: begin                           
-                        vram_addr_out <= vram_addr_out + (ctrl_out[2] ? 15'd32 : 15'd1);
+                    3'd7: begin // $2007 PPUDATA
+                        v <= v + (ctrl_out[2] ? 15'd32 : 15'd1);
                     end
                 endcase
             end
 
+            // CPU Read Logic
             if (!cpu_read_n) begin
                 case (cpu_addr)
                     3'd2: begin                           
-                        cpu_data_out <= (vblank_pulse) ? {1'b1, status_reg[6:0]} : status_reg;
-                        w_toggle <= 1'b0;                 
+                        cpu_data_out  <= (vblank_pulse) ? {1'b1, status_reg[6:0]} : status_reg;
+                        w             <= 1'b0; // Reading Status clears the toggle!                 
                         status_reg[7] <= 1'b0;            
                     end
                     
                     3'd7: begin                           
-                        if (vram_addr_out >= 15'h3F00) begin
+                        if (v >= 15'h3F00) begin
                             cpu_data_out <= mem_data_in; 
                             read_buffer  <= mem_data_in; 
                         end else begin
                             cpu_data_out <= read_buffer;
                             read_buffer  <= mem_data_in;
                         end
-                        vram_addr_out <= vram_addr_out + (ctrl_out[2] ? 15'd32 : 15'd1);
+                        v <= v + (ctrl_out[2] ? 15'd32 : 15'd1);
                     end
                     
                     default: cpu_data_out <= 8'h00;
@@ -325,4 +356,8 @@ module oam_ram (
         if (we) ram[addr] <= din;
         dout <= ram[addr];
     end
+
+
+    
+
 endmodule
