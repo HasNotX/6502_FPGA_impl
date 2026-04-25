@@ -77,6 +77,7 @@ module video_subsystem_top (
         .nes_x           (nes_x),
         .nes_y           (nes_y),
         .nes_visible     (is_rendering), 
+        .ppu_ctrl_reg    (dbg_ctrl),       // NEW: Pass the Control Register!
         .bg_mem_addr     (bg_mem_addr),
         .bg_mem_data     (bg_mem_data),
         .pixel_color_idx (pixel_color_idx),
