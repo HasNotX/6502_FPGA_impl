@@ -1,13 +1,11 @@
 module ppu_bg_render (
     input  wire        clk,
     input  wire        reset,
-    input  wire        nes_pixel_tick,
-    input  wire [8:0]  internal_x,
-    input  wire [8:0]  internal_y,
     
     input  wire [7:0]  nes_x,
     input  wire [7:0]  nes_y,
     input  wire        nes_visible,
+    input  wire        is_vblank, // Global VBlank flag
     input  wire [7:0]  ppu_ctrl_reg,
     
     input  wire [14:0] active_v_reg, 
@@ -19,6 +17,28 @@ module ppu_bg_render (
     output wire [3:0]  pixel_color_idx   
 );
 
+    reg [7:0] last_nes_x;
+    reg       phase;
+    always @(posedge clk) begin
+        last_nes_x <= nes_x;
+        if (nes_x != last_nes_x) phase <= 1'b1;
+        else                     phase <= ~phase;
+    end
+    wire nes_pixel_tick = phase;
+
+    reg [8:0] internal_x;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            internal_x <= 9'd0;
+        end else if (nes_pixel_tick) begin
+            if (nes_visible) internal_x <= {1'b0, nes_x};
+            else begin
+                if (internal_x == 9'd340) internal_x <= 9'd0; 
+                else                      internal_x <= internal_x + 9'd1;
+            end
+        end
+    end
+
     wire [14:0] base_pat_addr  = {2'b00, ppu_ctrl_reg[4], 12'd0};
 
     reg [7:0] nametable_latch;
@@ -27,8 +47,8 @@ module ppu_bg_render (
     reg [7:0] pattern_hi_latch;
 
     wire is_primer_window = (internal_x >= 9'd320 && internal_x <= 9'd336);
-    wire is_active_line   = (internal_y < 240) || (internal_y == 261);
-    wire pipeline_active  = is_active_line && (nes_visible || is_primer_window);
+    // Halt pipeline completely during VBlank to protect memory bus
+    wire pipeline_active  = !is_vblank && (nes_visible || is_primer_window);
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
