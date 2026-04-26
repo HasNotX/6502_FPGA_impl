@@ -1,11 +1,10 @@
-/*
- * File: ppu_core.v
- * Description: Top-Level PPU Wrapper. Phase 1 Implementation.
- * Integrates True Loopy Scrolling V and T registers directly into hardware.
- */
 module ppu_core (
     input  wire        clk,           
-    input  wire        reset,         
+    input  wire        reset,
+    input  wire        nes_pixel_tick,
+    input  wire [8:0]  internal_x,
+    input  wire [8:0]  internal_y,
+    
     input  wire        vblank_pulse,  
     input  wire        clear_vblank_pulse, 
     input  wire        sprite0_hit_pulse,  
@@ -49,8 +48,15 @@ module ppu_core (
     wire [7:0] palette_data_out;
     wire [7:0] oam_data_out;
 
-    wire [14:0] target_addr = nes_visible ? bg_mem_addr : vram_addr;
-    wire target_we = nes_visible ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd7));
+    wire rendering_enabled = ppu_mask[3] | ppu_mask[4];
+    wire is_active_line = (internal_y < 240) || (internal_y == 261);
+    
+    // Strict VBlank Arbitration
+    wire bg_fetching = rendering_enabled && is_active_line && 
+                       (nes_visible || (internal_x >= 320 && internal_x <= 336));
+
+    wire [14:0] target_addr = bg_fetching ? bg_mem_addr : vram_addr;
+    wire target_we = bg_fetching ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd7));
     
     wire [7:0] internal_mem_data_out = (target_addr >= 15'h3F00) ? palette_data_out :
                                        (target_addr >= 15'h2000) ? vram_data_out :
@@ -59,29 +65,6 @@ module ppu_core (
     assign bg_mem_data = internal_mem_data_out;
     assign chr_addr = target_addr[13:0];
     assign chr_read_n = ~(target_addr < 15'h2000);
-
-    // Phase Tracking 
-    reg [7:0] last_nes_x;
-    reg       phase;
-    always @(posedge clk) begin
-        last_nes_x <= nes_x;
-        if (nes_x != last_nes_x) phase <= 1'b1;
-        else                     phase <= ~phase;
-    end
-    wire nes_pixel_tick = phase;
-
-    reg [8:0] internal_x;
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            internal_x <= 9'd0;
-        end else if (nes_pixel_tick) begin
-            if (nes_visible) internal_x <= {1'b0, nes_x};
-            else begin
-                if (internal_x == 9'd340) internal_x <= 9'd0; 
-                else                      internal_x <= internal_x + 9'd1;
-            end
-        end
-    end
 
     ppu_registers regs_inst (
         .clk                (clk),
@@ -106,6 +89,8 @@ module ppu_core (
         
         .nes_pixel_tick     (nes_pixel_tick),
         .internal_x         (internal_x),
+        .internal_y         (internal_y),
+        .is_active_line     (is_active_line),
         .nes_visible        (nes_visible)
     );
 
@@ -138,10 +123,6 @@ module ppu_core (
 
 endmodule
 
-
-// =============================================================================
-// CPU to PPU Register Interface & True Loopy Scroll Logic
-// =============================================================================
 module ppu_registers (
     input  wire        clk,
     input  wire        reset,
@@ -165,12 +146,13 @@ module ppu_registers (
     
     input  wire        nes_pixel_tick,
     input  wire [8:0]  internal_x,
+    input  wire [8:0]  internal_y,
+    input  wire        is_active_line,
     input  wire        nes_visible
 );
     reg [7:0] status_reg;
     reg [7:0] read_buffer; 
 
-    // True Ricoh 2C02 Loopy Registers
     reg [14:0] v; 
     reg [14:0] t; 
     reg [2:0]  fine_x; 
@@ -194,7 +176,6 @@ module ppu_registers (
             t             <= 15'd0;
             fine_x        <= 3'd0;
         end else begin
-            // --- Flags ---
             if (clear_vblank_pulse) begin
                 status_reg[7] <= 1'b0;
                 status_reg[6] <= 1'b0; 
@@ -202,7 +183,6 @@ module ppu_registers (
             if (vblank_pulse)      status_reg[7] <= 1'b1;
             if (sprite0_hit_pulse) status_reg[6] <= 1'b1;
 
-            // --- CPU Writes ---
             if (!cpu_write_n) begin
                 case (cpu_addr)
                     3'd0: begin 
@@ -240,7 +220,6 @@ module ppu_registers (
                 endcase
             end
 
-            // --- CPU Reads ---
             if (!cpu_read_n) begin
                 case (cpu_addr)
                     3'd2: begin 
@@ -262,48 +241,45 @@ module ppu_registers (
                 endcase
             end
 
-            // --- Hardware Loopy Operations ---
             if (rendering_enabled && nes_pixel_tick) begin
-                
-                // 1. Coarse X Increment (Every 8 pixels)
-                if ((nes_visible || (internal_x >= 320 && internal_x <= 336)) && (internal_x[2:0] == 3'd7)) begin
-                    if (v[4:0] == 31) begin
-                        v[4:0] <= 0;
-                        v[10]  <= ~v[10]; 
-                    end else begin
-                        v[4:0] <= v[4:0] + 1;
-                    end
-                end
-
-                // 2. Y Increment (End of scanline)
-                if (internal_x == 256) begin
-                    if (v[14:12] < 7) begin
-                        v[14:12] <= v[14:12] + 1;
-                    end else begin
-                        v[14:12] <= 0;
-                        if (v[9:5] == 29) begin
-                            v[9:5] <= 0;
-                            v[11]  <= ~v[11]; 
-                        end else if (v[9:5] == 31) begin
-                            v[9:5] <= 0;
+                if (is_active_line) begin
+                    if ((nes_visible || (internal_x >= 320 && internal_x <= 336)) && (internal_x[2:0] == 3'd7)) begin
+                        if (v[4:0] == 31) begin
+                            v[4:0] <= 0;
+                            v[10]  <= ~v[10]; 
                         end else begin
-                            v[9:5] <= v[9:5] + 1;
+                            v[4:0] <= v[4:0] + 1;
                         end
                     end
-                end
 
-                // 3. Horizontal Copy (Start of scanline)
-                if (internal_x == 257) begin
-                    v[4:0] <= t[4:0];
-                    v[10]  <= t[10];
+                    if (internal_x == 256) begin
+                        if (v[14:12] < 7) begin
+                            v[14:12] <= v[14:12] + 1;
+                        end else begin
+                            v[14:12] <= 0;
+                            if (v[9:5] == 29) begin
+                                v[9:5] <= 0;
+                                v[11]  <= ~v[11]; 
+                            end else if (v[9:5] == 31) begin
+                                v[9:5] <= 0;
+                            end else begin
+                                v[9:5] <= v[9:5] + 1;
+                            end
+                        end
+                    end
+
+                    if (internal_x == 257) begin
+                        v[4:0] <= t[4:0];
+                        v[10]  <= t[10];
+                    end
                 end
-            end
-            
-            // 4. Vertical Copy (Frame start / Pre-render line proxy)
-            if (clear_vblank_pulse && rendering_enabled) begin
-                v[9:5]   <= t[9:5];
-                v[11]    <= t[11];
-                v[14:12] <= t[14:12];
+                
+                // Copy V on pre-render line
+                if (internal_y == 261 && internal_x >= 280 && internal_x <= 304) begin
+                    v[9:5]   <= t[9:5];
+                    v[11]    <= t[11];
+                    v[14:12] <= t[14:12];
+                end
             end
         end
     end

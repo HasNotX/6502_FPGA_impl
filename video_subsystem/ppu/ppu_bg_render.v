@@ -1,13 +1,9 @@
-/*
- * File: ppu_bg_render.v
- * Description: Cycle-accurate background rendering engine.
- * Relies strictly on the active 'v' register from ppu_core for addressing,
- * completely eliminating arithmetic scroll tearing.
- */
-
 module ppu_bg_render (
     input  wire        clk,
     input  wire        reset,
+    input  wire        nes_pixel_tick,
+    input  wire [8:0]  internal_x,
+    input  wire [8:0]  internal_y,
     
     input  wire [7:0]  nes_x,
     input  wire [7:0]  nes_y,
@@ -23,52 +19,26 @@ module ppu_bg_render (
     output wire [3:0]  pixel_color_idx   
 );
 
-    reg [7:0] last_nes_x;
-    reg       phase;
-    always @(posedge clk) begin
-        last_nes_x <= nes_x;
-        if (nes_x != last_nes_x) phase <= 1'b1;
-        else                     phase <= ~phase;
-    end
-    wire nes_pixel_tick = phase;
-
-    reg [8:0] internal_x;
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            internal_x <= 9'd0;
-        end else if (nes_pixel_tick) begin
-            if (nes_visible) internal_x <= {1'b0, nes_x};
-            else begin
-                if (internal_x == 9'd340) internal_x <= 9'd0; 
-                else                      internal_x <= internal_x + 9'd1;
-            end
-        end
-    end
-
     wire [14:0] base_pat_addr  = {2'b00, ppu_ctrl_reg[4], 12'd0};
 
-    // -------------------------------------------------------------------------
-    // Synchronous 8-Tick Pipeline
-    // -------------------------------------------------------------------------
     reg [7:0] nametable_latch;
     reg [1:0] attr_latch; 
     reg [7:0] pattern_lo_latch;
     reg [7:0] pattern_hi_latch;
 
     wire is_primer_window = (internal_x >= 9'd320 && internal_x <= 9'd336);
-    wire pipeline_active  = nes_visible || is_primer_window;
+    wire is_active_line   = (internal_y < 240) || (internal_y == 261);
+    wire pipeline_active  = is_active_line && (nes_visible || is_primer_window);
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             bg_mem_addr <= 15'd0;
         end else if (pipeline_active && nes_pixel_tick) begin
             case (internal_x[2:0])
-                // The 'v' register holds the EXACT Nametable address! No math needed!
                 3'd0: bg_mem_addr <= 15'h2000 | (active_v_reg & 15'h0FFF); 
                 3'd1: ; 
                 3'd2: begin 
                     nametable_latch <= bg_mem_data; 
-                    // Attribute math is also derived directly from 'v'
                     bg_mem_addr <= 15'h23C0 | (active_v_reg & 15'h0C00) | ({9'd0, active_v_reg[9:7]} << 3) | {12'd0, active_v_reg[4:2]};
                 end
                 3'd3: ; 
@@ -93,15 +63,13 @@ module ppu_bg_render (
         end
     end
 
-    // -------------------------------------------------------------------------
-    // Shift Registers
-    // -------------------------------------------------------------------------
     reg [15:0] shift_pat_lo;
     reg [15:0] shift_pat_hi;
     reg [15:0] shift_attr_lo;
     reg [15:0] shift_attr_hi;
 
-    wire load_now = (nes_pixel_tick && pipeline_active && internal_x[2:0] == 3'd0 && internal_x != 9'd0);
+    wire do_shift = (nes_pixel_tick && pipeline_active && internal_x != 9'd0);
+    wire load_now = (do_shift && internal_x[2:0] == 3'd0);
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -109,7 +77,7 @@ module ppu_bg_render (
             shift_pat_hi  <= 16'd0;
             shift_attr_lo <= 16'd0;
             shift_attr_hi <= 16'd0;
-        end else if (nes_pixel_tick && pipeline_active) begin
+        end else if (do_shift) begin
             if (load_now) begin
                 shift_pat_lo  <= {shift_pat_lo[14:7], pattern_lo_latch};
                 shift_pat_hi  <= {shift_pat_hi[14:7], pattern_hi_latch};

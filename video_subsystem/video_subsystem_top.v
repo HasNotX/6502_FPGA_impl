@@ -1,8 +1,3 @@
-/*
- * File: video_subsystem_top.v
- * Description: Subsystem wiring with integrated Phase 1 True Loopy Scroll routing.
- */
-
 module video_subsystem_top (
     input  wire        clk_25mhz,
     input  wire        reset,
@@ -57,27 +52,63 @@ module video_subsystem_top (
 
     wire is_rendering = nes_visible && dbg_mask[3];
 
+    // =========================================================================
+    // MASTER PHASE TRACKER: Perfectly maps 400-pixel VGA line to 341-pixel NES
+    // =========================================================================
+    reg [8:0] internal_x;
+    reg [8:0] internal_y;
+    reg phase;
     reg last_nes_visible;
-    reg [7:0] last_nes_y;
-    always @(posedge clk_25mhz) begin
-        last_nes_visible <= nes_visible;
-        last_nes_y       <= nes_y;
+    
+    always @(posedge clk_25mhz or posedge reset) begin
+        if (reset) begin
+            internal_x <= 0;
+            internal_y <= 0;
+            phase <= 0;
+            last_nes_visible <= 0;
+        end else begin
+            last_nes_visible <= nes_visible;
+            
+            // Hard Sync to VGA beam entering the active window
+            if (nes_visible && !last_nes_visible) begin
+                internal_x <= 9'd0;
+                internal_y <= nes_y; // Syncs physical VGA Y to NES Y
+                phase <= 1'b1;
+            end else begin
+                phase <= ~phase;
+                if (phase == 1'b1) begin
+                    // 399 accommodates the 800 VGA clocks per line
+                    if (internal_x == 399) begin
+                        internal_x <= 9'd0;
+                        if (internal_y == 261) internal_y <= 0;
+                        else internal_y <= internal_y + 1;
+                    end else begin
+                        internal_x <= internal_x + 1;
+                    end
+                end
+            end
+        end
     end
+    wire nes_pixel_tick = phase;
 
-    wire vblank_pulse       = !nes_visible && last_nes_visible && (last_nes_y == 8'd239);
-    wire clear_vblank_pulse = nes_visible && !last_nes_visible && (nes_y == 8'd0);
+    // VBlank mapped directly to NES coordinates, not physical VGA bounds
+    wire vblank_pulse       = (nes_pixel_tick && internal_y == 241 && internal_x == 1);
+    wire clear_vblank_pulse = (nes_pixel_tick && internal_y == 261 && internal_x == 1);
     wire sprite0_hit_pulse  = nes_visible && (nes_y == 8'd30) && (nes_x == 8'd64);
 
     // Loopy Routing Nets
     wire [14:0] active_v_reg;
     wire [2:0]  fine_x_scroll;
     
-    assign dbg_vram_addr = active_v_reg; // Route active VRAM tracking out
-    assign dbg_nt_latch  = 8'h00;        // Deprecated: Tied low to prevent hierarchy crash
+    assign dbg_vram_addr = active_v_reg; 
+    assign dbg_nt_latch  = 8'h00;        
 
     ppu_bg_render bg_render (
         .clk             (clk_25mhz),
         .reset           (reset),
+        .nes_pixel_tick  (nes_pixel_tick),
+        .internal_x      (internal_x),
+        .internal_y      (internal_y),
         .nes_x           (nes_x),
         .nes_y           (nes_y),
         .nes_visible     (is_rendering), 
@@ -95,6 +126,10 @@ module video_subsystem_top (
     ppu_core ppu_inst (
         .clk                (clk_25mhz), 
         .reset              (reset),
+        .nes_pixel_tick     (nes_pixel_tick),
+        .internal_x         (internal_x),
+        .internal_y         (internal_y),
+        
         .vblank_pulse       (vblank_pulse),
         .clear_vblank_pulse (clear_vblank_pulse), 
         .sprite0_hit_pulse  (sprite0_hit_pulse),  
