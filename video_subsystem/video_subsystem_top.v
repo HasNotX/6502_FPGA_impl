@@ -65,7 +65,7 @@ module video_subsystem_top (
 
     wire [14:0] active_v_reg;
     wire [2:0]  fine_x_scroll;
-    
+
     assign dbg_vram_addr = active_v_reg; 
     assign dbg_nt_latch  = 8'h00;        
 
@@ -83,7 +83,28 @@ module video_subsystem_top (
         .pixel_color_idx (pixel_color_idx)
     );
 
-    wire [4:0] dac_palette_addr = (pixel_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, pixel_color_idx};
+    // =========================================================================
+    // Domain Bridge: Ping-Pong Line Buffer (Stage 3 Integration)
+    // =========================================================================
+    wire [3:0] buffered_color_idx;
+
+    ping_pong_line_buffer scanline_buffer (
+        .clk           (clk_25mhz),
+        
+        // PPU Write Domain (Temporarily mocked with VGA timing for Stage 3)
+        .ppu_ce        (1'b1), // Safe to write the same value twice due to 2x scaling
+        .ppu_x         ({1'b0, nes_x}),
+        .ppu_y         ({1'b0, nes_y}),
+        .ppu_visible   (is_rendering),
+        .ppu_color_idx (pixel_color_idx),
+        
+        // VGA Read Domain
+        .vga_nes_x     (nes_x),
+        .vga_color_idx (buffered_color_idx)
+    );
+
+    // Route the buffered color to the DAC instead of the raw rendering output
+    wire [4:0] dac_palette_addr = (buffered_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, buffered_color_idx};
     wire [7:0] nes_color_code;
 
     ppu_core ppu_inst (
@@ -120,6 +141,7 @@ module video_subsystem_top (
     );
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;
+
     nes_palette_lut palette_lut (
         .clk            (clk_25mhz),
         .reset          (reset),
