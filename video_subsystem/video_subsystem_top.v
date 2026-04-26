@@ -129,8 +129,8 @@ module video_subsystem_top (
         .vga_b          (vga_b_10)
     );
 
-    assign vga_r = vga_blank_n ? vga_r_10[9:2] : 8'h00;
-    assign vga_g = vga_blank_n ? vga_g_10[9:2] : 8'h00;
-    assign vga_b = vga_blank_n ? vga_b_10[9:2] : 8'h00;
+    assign vga_r = vga_blank_n && nes_visible ? vga_r_10[9:2] : 8'hFF;
+    assign vga_g = vga_blank_n && nes_visible ? vga_g_10[9:2] : 8'hC0;
+    assign vga_b = vga_blank_n && nes_visible ? vga_b_10[9:2] : 8'hCB;
 
 endmodule
