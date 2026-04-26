@@ -1,3 +1,8 @@
+/*
+ * File: video_subsystem_top.v
+ * Description: Subsystem wiring with integrated Phase 1 True Loopy Scroll routing.
+ */
+
 module video_subsystem_top (
     input  wire        clk_25mhz,
     input  wire        reset,
@@ -52,9 +57,6 @@ module video_subsystem_top (
 
     wire is_rendering = nes_visible && dbg_mask[3];
 
-    // =========================================================================
-    // NEW: PPU Hardware Event Pulses
-    // =========================================================================
     reg last_nes_visible;
     reg [7:0] last_nes_y;
     always @(posedge clk_25mhz) begin
@@ -62,14 +64,16 @@ module video_subsystem_top (
         last_nes_y       <= nes_y;
     end
 
-    // Fire VBlank at the end of the last visible scanline (239)
     wire vblank_pulse       = !nes_visible && last_nes_visible && (last_nes_y == 8'd239);
-    
-    // Clear flags at the start of the first visible scanline (0)
     wire clear_vblank_pulse = nes_visible && !last_nes_visible && (nes_y == 8'd0);
-    
-    // Fake Sprite 0 Hit: Fire at scanline 30, X coordinate 64 (Near the coin icon)
     wire sprite0_hit_pulse  = nes_visible && (nes_y == 8'd30) && (nes_x == 8'd64);
+
+    // Loopy Routing Nets
+    wire [14:0] active_v_reg;
+    wire [2:0]  fine_x_scroll;
+    
+    assign dbg_vram_addr = active_v_reg; // Route active VRAM tracking out
+    assign dbg_nt_latch  = 8'h00;        // Deprecated: Tied low to prevent hierarchy crash
 
     ppu_bg_render bg_render (
         .clk             (clk_25mhz),
@@ -77,11 +81,12 @@ module video_subsystem_top (
         .nes_x           (nes_x),
         .nes_y           (nes_y),
         .nes_visible     (is_rendering), 
-        .ppu_ctrl_reg    (dbg_ctrl),       // NEW: Pass the Control Register!
+        .ppu_ctrl_reg    (dbg_ctrl),       
+        .active_v_reg    (active_v_reg),  
+        .fine_x_scroll   (fine_x_scroll), 
         .bg_mem_addr     (bg_mem_addr),
         .bg_mem_data     (bg_mem_data),
-        .pixel_color_idx (pixel_color_idx),
-        .dbg_nt_latch    (dbg_nt_latch)
+        .pixel_color_idx (pixel_color_idx)
     );
 
     wire [4:0] dac_palette_addr = (pixel_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, pixel_color_idx};
@@ -91,25 +96,32 @@ module video_subsystem_top (
         .clk                (clk_25mhz), 
         .reset              (reset),
         .vblank_pulse       (vblank_pulse),
-        .clear_vblank_pulse (clear_vblank_pulse), // NEW
-        .sprite0_hit_pulse  (sprite0_hit_pulse),  // NEW
+        .clear_vblank_pulse (clear_vblank_pulse), 
+        .sprite0_hit_pulse  (sprite0_hit_pulse),  
         .nmi_out            (nmi_out),
+        
         .cpu_addr           (cpu_addr),
         .cpu_data_in        (cpu_data_in),
         .cpu_data_out       (cpu_data_out),
         .cpu_read_n         (cpu_read_n),
         .cpu_write_n        (cpu_write_n),
+        
         .chr_addr           (chr_addr),
         .chr_data_in        (chr_data_in),
         .chr_read_n         (chr_read_n),
+        
         .dbg_ctrl           (dbg_ctrl),
         .dbg_mask           (dbg_mask),
+        .active_v_reg       (active_v_reg),
+        .fine_x_scroll      (fine_x_scroll),
+        
+        .nes_x              (nes_x),
         .nes_visible        (is_rendering),
         .bg_mem_addr        (bg_mem_addr),
         .bg_mem_data        (bg_mem_data),
+        
         .dac_palette_addr   (dac_palette_addr),
         .dac_palette_data   (nes_color_code),
-        .dbg_vram_addr      (dbg_vram_addr),
         .dbg_palette_00     (dbg_palette_00)
     );
 
