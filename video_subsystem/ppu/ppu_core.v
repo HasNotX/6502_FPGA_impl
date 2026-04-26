@@ -1,7 +1,6 @@
 module ppu_core (
     input  wire        clk,           
-    input  wire        reset,
-    
+    input  wire        reset,         
     input  wire        vblank_pulse,  
     input  wire        clear_vblank_pulse, 
     input  wire        sprite0_hit_pulse,  
@@ -24,7 +23,6 @@ module ppu_core (
 
     input  wire [7:0]  nes_x,
     input  wire        nes_visible,
-    input  wire        is_vblank, // Global VBlank flag
     input  wire [14:0] bg_mem_addr,
     output wire [7:0]  bg_mem_data,
     
@@ -46,50 +44,10 @@ module ppu_core (
     wire [7:0] palette_data_out;
     wire [7:0] oam_data_out;
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Precision Edge Detectors & Clocks
-    // ─────────────────────────────────────────────────────────────────────────
-    reg [7:0] last_nes_x;
-    reg       phase;
-    always @(posedge clk) begin
-        last_nes_x <= nes_x;
-        // Creates a seamless 12.5MHz tick across both active and blanking periods
-        if (nes_x != last_nes_x) phase <= 1'b1;
-        else                     phase <= ~phase;
-    end
-    wire nes_pixel_tick = phase;
-
-    reg [8:0] internal_x;
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            internal_x <= 9'd0;
-        end else if (nes_pixel_tick) begin
-            if (nes_visible) internal_x <= {1'b0, nes_x};
-            else             internal_x <= internal_x + 9'd1;
-        end
-    end
-
-    reg last_nes_visible;
-    reg vga_sweep_parity; // 0 = first sweep, 1 = second sweep of the 2x scale
-    always @(posedge clk) begin
-        if (nes_pixel_tick) begin
-            last_nes_visible <= nes_visible;
-            if (nes_visible && !last_nes_visible) vga_sweep_parity <= 1'b0;
-            else if (internal_x == 399)           vga_sweep_parity <= ~vga_sweep_parity;
-        end
-    end
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Strict VBlank Memory Arbitration
-    // ─────────────────────────────────────────────────────────────────────────
-    wire rendering_enabled = ppu_mask[3] | ppu_mask[4];
-    
-    // Allow fetching unconditionally during HBlank. ONLY block during VBlank.
-    wire bg_fetching = rendering_enabled && !is_vblank && 
-                       (nes_visible || (internal_x >= 320 && internal_x <= 336));
-
-    wire [14:0] target_addr = bg_fetching ? bg_mem_addr : vram_addr;
-    wire target_we = bg_fetching ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd7));
+    // YOUR ORIGINAL FLAWLESS ARBITRATOR
+    // PPU gets bus only when drawing pixels. CPU gets it otherwise.
+    wire [14:0] target_addr = nes_visible ? bg_mem_addr : vram_addr;
+    wire target_we = nes_visible ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd7));
     
     wire [7:0] internal_mem_data_out = (target_addr >= 15'h3F00) ? palette_data_out :
                                        (target_addr >= 15'h2000) ? vram_data_out :
@@ -120,11 +78,8 @@ module ppu_core (
         .fine_x_out         (fine_x_scroll),
         .nmi_out            (nmi_out),
         
-        .nes_pixel_tick     (nes_pixel_tick),
-        .internal_x         (internal_x),
-        .nes_visible        (nes_visible),
-        .is_vblank          (is_vblank),
-        .vga_sweep_parity   (vga_sweep_parity)
+        .nes_x              (nes_x),
+        .nes_visible        (nes_visible)
     );
 
     vram_2k nametable_ram (
@@ -178,11 +133,8 @@ module ppu_registers (
     output wire [2:0]  fine_x_out,
     output wire        nmi_out,
     
-    input  wire        nes_pixel_tick,
-    input  wire [8:0]  internal_x,
-    input  wire        nes_visible,
-    input  wire        is_vblank,
-    input  wire        vga_sweep_parity
+    input  wire [7:0]  nes_x,
+    input  wire        nes_visible
 );
     reg [7:0] status_reg;
     reg [7:0] read_buffer; 
@@ -197,6 +149,25 @@ module ppu_registers (
     assign fine_x_out = fine_x;
     
     wire rendering_enabled = mask_out[3] | mask_out[4];
+
+    // Simple Edge Detectors based entirely on your NES coordinates
+    reg last_nes_visible;
+    reg [7:0] last_nes_x;
+    always @(posedge clk) begin
+        last_nes_visible <= nes_visible;
+        last_nes_x <= nes_x;
+    end
+    
+    wire pixel_tick = (nes_x != last_nes_x) && nes_visible;
+    wire start_of_scanline = nes_visible && !last_nes_visible;
+    wire end_of_scanline   = !nes_visible && last_nes_visible;
+
+    // 2x VGA Parity Toggle: Ensures Y scrolls at NES resolution (240) not VGA (480)
+    reg vga_sweep_parity; 
+    always @(posedge clk) begin
+        if (clear_vblank_pulse) vga_sweep_parity <= 1'b0;
+        else if (end_of_scanline) vga_sweep_parity <= ~vga_sweep_parity;
+    end
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -275,10 +246,11 @@ module ppu_registers (
                 endcase
             end
 
-            if (rendering_enabled && nes_pixel_tick) begin
+            // Loopy Hardware Updates - Exclusively run during active display
+            if (rendering_enabled) begin
                 
-                // 1. Coarse X Increment
-                if ((nes_visible || (internal_x >= 320 && internal_x <= 336)) && (internal_x[2:0] == 3'd7)) begin
+                // Coarse X Increment
+                if (pixel_tick && nes_x[2:0] == 3'd7) begin
                     if (v[4:0] == 31) begin
                         v[4:0] <= 0;
                         v[10]  <= ~v[10]; 
@@ -287,8 +259,8 @@ module ppu_registers (
                     end
                 end
 
-                // 2. Y Increment (ONLY on 2nd VGA sweep to preserve 2x geometry)
-                if (internal_x == 256 && vga_sweep_parity == 1'b1) begin
+                // Y Increment (Only on 2nd VGA sweep)
+                if (end_of_scanline && vga_sweep_parity == 1'b1) begin
                     if (v[14:12] < 7) begin
                         v[14:12] <= v[14:12] + 1;
                     end else begin
@@ -304,16 +276,15 @@ module ppu_registers (
                     end
                 end
 
-                // 3. Horizontal Copy (Reset carriage at start of line)
-                if (internal_x == 257) begin
+                // Horizontal Copy (Start of EVERY sweep to reset carriage)
+                if (start_of_scanline) begin
                     v[4:0] <= t[4:0];
                     v[10]  <= t[10];
                 end
             end
             
-            // 4. Vertical Copy
-            // Continuously copies during VBlank to guarantee perfect alignment when active frame starts
-            if (is_vblank && rendering_enabled) begin
+            // Vertical Copy (Start of Frame - top left pixel)
+            if (clear_vblank_pulse && rendering_enabled) begin
                 v[9:5]   <= t[9:5];
                 v[11]    <= t[11];
                 v[14:12] <= t[14:12];

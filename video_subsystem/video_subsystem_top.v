@@ -63,14 +63,6 @@ module video_subsystem_top (
     wire clear_vblank_pulse = nes_visible && !last_nes_visible && (nes_y == 8'd0);
     wire sprite0_hit_pulse  = nes_visible && (nes_y == 8'd30) && (nes_x == 8'd64);
 
-    // Global VBlank State Tracker
-    reg is_vblank;
-    always @(posedge clk_25mhz) begin
-        if (reset) is_vblank <= 1'b0;
-        else if (vblank_pulse) is_vblank <= 1'b1;
-        else if (clear_vblank_pulse) is_vblank <= 1'b0;
-    end
-
     wire [14:0] active_v_reg;
     wire [2:0]  fine_x_scroll;
     
@@ -83,7 +75,6 @@ module video_subsystem_top (
         .nes_x           (nes_x),
         .nes_y           (nes_y),
         .nes_visible     (is_rendering), 
-        .is_vblank       (is_vblank), // Pass global flag
         .ppu_ctrl_reg    (dbg_ctrl),       
         .active_v_reg    (active_v_reg),  
         .fine_x_scroll   (fine_x_scroll), 
@@ -120,7 +111,6 @@ module video_subsystem_top (
         
         .nes_x              (nes_x),
         .nes_visible        (is_rendering),
-        .is_vblank          (is_vblank), // Pass global flag
         .bg_mem_addr        (bg_mem_addr),
         .bg_mem_data        (bg_mem_data),
         
