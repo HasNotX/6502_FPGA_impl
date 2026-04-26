@@ -1,7 +1,7 @@
 /* * Module: nes_vga_core
  * Description: Generates standard 640x480@60Hz VGA timing and maps physical 
  * screen coordinates to the NES 256x240 internal resolution.
- * Applies 2x integer scaling and pillarboxing.
+ * Applies 2x integer scaling and perfect 64-pixel pillarboxing.
  */
 
 module nes_vga_core (
@@ -69,9 +69,9 @@ module nes_coordinate_mapper (
     output wire       nes_visible
 );
 
-    // Pillarbox parameters
-    localparam H_OFFSET = 10'd64;  // (640 - (256 * 2)) / 2
-    localparam V_OFFSET = 10'd0;   // (480 - (240 * 2)) / 2
+    // Pillarbox parameters for perfect 2x scaling alignment
+    localparam H_OFFSET = 10'd64;         // (640 - (256 * 2)) / 2
+    localparam V_OFFSET = 10'd0;          // (480 - (240 * 2)) / 2
     
     localparam NES_WIDTH_SCALED  = 10'd512;
     localparam NES_HEIGHT_SCALED = 10'd480;
@@ -86,8 +86,6 @@ module nes_coordinate_mapper (
     assign nes_visible = is_within_nes_window;
 
     // Calculate NES coordinates by removing the offset and downshifting (dividing by 2)
-    // The conditional operator ensures coordinates stay at 0 when outside the window, 
-    // preventing potential floating wire issues or unexpected memory reads.
     assign nes_x = is_within_nes_window ? ((pixel_x - H_OFFSET) >> 1) : 8'd0;
     assign nes_y = is_within_nes_window ? ((pixel_y - V_OFFSET) >> 1) : 8'd0;
 
