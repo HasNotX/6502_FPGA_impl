@@ -61,7 +61,7 @@ module video_subsystem_top (
 
     wire vblank_pulse       = !nes_visible && last_nes_visible && (last_nes_y == 8'd239);
     wire clear_vblank_pulse = nes_visible && !last_nes_visible && (nes_y == 8'd0);
-    wire sprite0_hit_pulse  = nes_visible && (nes_y == 8'd30) && (nes_x == 8'd64);
+    wire sprite0_hit_pulse  = nes_visible && (nes_y == 8'd23) && (nes_x == 8'd88);
 
     wire [14:0] active_v_reg;
     wire [2:0]  fine_x_scroll;
@@ -129,8 +129,8 @@ module video_subsystem_top (
         .vga_b          (vga_b_10)
     );
 
-    assign vga_r = vga_blank_n && nes_visible ? vga_r_10[9:2] : 8'hFF;
-    assign vga_g = vga_blank_n && nes_visible ? vga_g_10[9:2] : 8'hC0;
-    assign vga_b = vga_blank_n && nes_visible ? vga_b_10[9:2] : 8'hCB;
+    assign vga_r = vga_blank_n && nes_visible ? vga_r_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hFF;
+    assign vga_g = vga_blank_n && nes_visible ? vga_g_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hC0;
+    assign vga_b = vga_blank_n && nes_visible ? vga_b_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hCB;
 
 endmodule
