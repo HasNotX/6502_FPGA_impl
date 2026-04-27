@@ -13,6 +13,7 @@ module ppu_bg_render (
     input  wire [8:0]  ppu_y,
     input  wire        ppu_visible,
     input  wire [7:0]  ppu_ctrl_reg,
+    input  wire [7:0]  ppu_mask_reg,
     
     input  wire [14:0] active_v_reg, 
     input  wire [2:0]  fine_x_scroll, 
@@ -124,7 +125,10 @@ module ppu_bg_render (
     wire attr_bit_0 = shift_attr_lo[bit_sel];
     wire attr_bit_1 = shift_attr_hi[bit_sel];
 
-    assign pixel_color_idx = (pat_bit_1 == 0 && pat_bit_0 == 0) ?
-                             4'b0000 : {attr_bit_1, attr_bit_0, pat_bit_1, pat_bit_0};
+    // NEW: Check if PPUMASK[1] requires us to blank the leftmost 8 pixels
+    wire clip_bg = (~ppu_mask_reg[1]) && (ppu_x < 9'd8);
 
+    // Update the assignment to force 4'b0000 (Universal Background Color) if clipped
+    assign pixel_color_idx = (clip_bg || (pat_bit_1 == 0 && pat_bit_0 == 0)) ?
+                             4'b0000 : {attr_bit_1, attr_bit_0, pat_bit_1, pat_bit_0};
 endmodule
