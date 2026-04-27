@@ -72,21 +72,22 @@ module nes_coordinate_mapper (
     // Pillarbox parameters for perfect 2x scaling alignment
     localparam H_OFFSET = 10'd64;         // (640 - (256 * 2)) / 2
     localparam V_OFFSET = 10'd0;          // (480 - (240 * 2)) / 2
+    localparam TEST_OFFSET = 10'd16;       
     
     localparam NES_WIDTH_SCALED  = 10'd512;
     localparam NES_HEIGHT_SCALED = 10'd480;
 
     // Check if the current pixel is within the 512x480 scaled NES window
     wire is_within_nes_window = video_on && 
-                                (pixel_x >= H_OFFSET) && 
-                                (pixel_x < (H_OFFSET + NES_WIDTH_SCALED)) &&
+                                (pixel_x >= H_OFFSET + TEST_OFFSET) && 
+                                (pixel_x < (H_OFFSET + NES_WIDTH_SCALED - TEST_OFFSET)) &&
                                 (pixel_y >= V_OFFSET) && 
                                 (pixel_y < (V_OFFSET + NES_HEIGHT_SCALED));
 
     assign nes_visible = is_within_nes_window;
 
     // Calculate NES coordinates by removing the offset and downshifting (dividing by 2)
-    assign nes_x = is_within_nes_window ? ((pixel_x - H_OFFSET) >> 1) : 8'd0;
+    assign nes_x = is_within_nes_window ? ((pixel_x - H_OFFSET + TEST_OFFSET) >> 1) : 8'd0;
     assign nes_y = is_within_nes_window ? ((pixel_y - V_OFFSET) >> 1) : 8'd0;
 
 endmodule

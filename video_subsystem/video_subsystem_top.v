@@ -80,7 +80,7 @@ module video_subsystem_top (
 
     wire vblank_pulse       = ppu_ce && (ppu_y == 9'd241) && (ppu_x == 9'd1);
     wire clear_vblank_pulse = ppu_ce && (ppu_y == 9'd261) && (ppu_x == 9'd1);
-    wire sprite0_hit_pulse  = ppu_ce && (ppu_y == 9'd30)  && (ppu_x == 9'd96) && is_rendering;
+    wire sprite0_hit_pulse  = ppu_ce && (ppu_y == 9'd23)  && (ppu_x == 9'd96) && is_rendering;
 
     wire [14:0] active_v_reg;
     wire [2:0]  fine_x_scroll;

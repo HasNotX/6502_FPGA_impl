@@ -4,7 +4,6 @@ module ppu_core (
     input  wire        ppu_ce,
     input  wire        vblank_pulse,  
     input  wire        clear_vblank_pulse, 
-    input  wire        sprite0_hit_pulse,  
    
     output wire        nmi_out,
 
@@ -33,26 +32,97 @@ module ppu_core (
     output wire [7:0]  dac_palette_data,
     output wire [7:0]  dbg_palette_00,
 
-    // HARDWARE SURGERY: Diagnostic trap outputs
     output wire [8:0]  trap_y_out,
-    output wire [8:0]  trap_x_out
+    output wire [8:0]  trap_x_out,
+    
+    // Inter-module signals routed from bg_render
+    input  wire [3:0]  bg_pixel_idx
 );
 
     wire [7:0] ppu_ctrl;
     wire [7:0] ppu_mask;
-    wire [7:0] oam_addr;
+    wire [7:0] cpu_oam_addr;
     wire [14:0] vram_addr;
 
     assign dbg_ctrl = ppu_ctrl;
     assign dbg_mask = ppu_mask;
     assign active_v_reg = vram_addr;
     
-    wire [7:0] vram_data_out;
-    wire [7:0] palette_data_out;
+    wire rendering_enabled = ppu_mask[3] | ppu_mask[4];
+    wire is_active_frame   = rendering_enabled && (ppu_y < 9'd240 || ppu_y == 9'd261);
+
+    // =========================================================================
+    // OAM Subsystem Arbitration
+    // =========================================================================
+    wire [7:0] eval_oam_addr;
+    wire [7:0] active_oam_addr = is_active_frame ? eval_oam_addr : cpu_oam_addr;
+    wire       active_oam_we   = is_active_frame ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd4));
     wire [7:0] oam_data_out;
 
-    wire [14:0] target_addr = ppu_visible ? bg_mem_addr : vram_addr;
+    wire [4:0] eval_sec_oam_addr;
+    wire [7:0] eval_sec_oam_data;
+    wire       eval_sec_oam_we;
+    
+    wire [4:0] render_sec_oam_addr;
+    wire [7:0] sec_oam_data_out;
+    
+    wire [4:0] active_sec_oam_addr = (ppu_x >= 9'd257) ? render_sec_oam_addr : eval_sec_oam_addr;
+
+    wire sprite_0_active;
+    wire sprite_overflow;
+
+    ppu_sprite_eval eval_inst (
+        .clk             (clk),
+        .reset           (reset),
+        .ppu_ce          (ppu_ce),
+        .ppu_x           (ppu_x),
+        .ppu_y           (ppu_y),
+        .ppu_ctrl_reg    (ppu_ctrl),
+        .oam_addr        (eval_oam_addr),
+        .oam_data        (oam_data_out),
+        .sec_oam_addr    (eval_sec_oam_addr),
+        .sec_oam_data    (eval_sec_oam_data),
+        .sec_oam_we      (eval_sec_oam_we),
+        .sprite_0_active (sprite_0_active),
+        .sprite_overflow (sprite_overflow)
+    );
+
+    wire [13:0] sprite_chr_addr;
+    wire [3:0]  sprite_pixel_idx;
+    wire        sprite_priority;
+    wire        sprite_0_hit_pulse;
+
+    ppu_sprite_render render_inst (
+        .clk                (clk),
+        .reset              (reset),
+        .ppu_ce             (ppu_ce),
+        .ppu_x              (ppu_x),
+        .ppu_y              (ppu_y),
+        .ppu_ctrl_reg       (ppu_ctrl),
+        .sec_oam_addr       (render_sec_oam_addr),
+        .sec_oam_data       (sec_oam_data_out),
+        .chr_addr           (sprite_chr_addr),
+        .chr_data           (chr_data_in),
+        .sprite_pixel_idx   (sprite_pixel_idx),
+        .sprite_priority    (sprite_priority),
+        .sprite_0_hit_pulse (sprite_0_hit_pulse),
+        .sprite_0_active    (sprite_0_active),
+        .bg_pixel_idx       (bg_pixel_idx),
+        .rendering_enabled  (rendering_enabled)
+    );
+
+    // =========================================================================
+    // Memory Bus Arbitration
+    // =========================================================================
+    wire is_sprite_chr_window = is_active_frame && (ppu_x >= 9'd257 && ppu_x <= 9'd320);
+    
+    wire [14:0] target_addr = is_sprite_chr_window ? {1'b0, sprite_chr_addr} :
+                              ppu_visible ? bg_mem_addr : vram_addr;
+                              
     wire target_we = ppu_visible ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd7));
+    
+    wire [7:0] vram_data_out;
+    wire [7:0] palette_data_out;
     
     wire [7:0] internal_mem_data_out = (target_addr >= 15'h3F00) ? palette_data_out :
                                        (target_addr >= 15'h2000) ? vram_data_out :
@@ -68,7 +138,7 @@ module ppu_core (
         .ppu_ce             (ppu_ce),
         .vblank_pulse       (vblank_pulse), 
         .clear_vblank_pulse (clear_vblank_pulse),
-        .sprite0_hit_pulse  (sprite0_hit_pulse),
+        .sprite0_hit_pulse  (sprite_0_hit_pulse), // Driven natively by render pipeline
         
         .cpu_addr           (cpu_addr),
         .cpu_data_in        (cpu_data_in),
@@ -80,7 +150,7 @@ module ppu_core (
         .ctrl_out           (ppu_ctrl),
         .mask_out           (ppu_mask),
         .vram_addr_out      (vram_addr),
-        .oam_addr_out       (oam_addr),
+        .oam_addr_out       (cpu_oam_addr),
         .fine_x_out         (fine_x_scroll),
         .nmi_out            (nmi_out),
         
@@ -113,10 +183,18 @@ module ppu_core (
 
     oam_ram sprite_ram (
         .clk    (clk),
-        .addr   (oam_addr),
+        .addr   (active_oam_addr),
         .din    (cpu_data_in),
-        .we     ((~cpu_write_n) && (cpu_addr == 3'd4)), 
+        .we     (active_oam_we), 
         .dout   (oam_data_out)
+    );
+
+    sec_oam_ram sec_sprite_ram (
+        .clk    (clk),
+        .addr   (active_sec_oam_addr),
+        .din    (eval_sec_oam_data),
+        .we     (eval_sec_oam_we && is_active_frame),
+        .dout   (sec_oam_data_out)
     );
 
 endmodule
@@ -321,15 +399,27 @@ module palette_ram (
 );
     reg [7:0] ram [0:31];
     integer i;
+    
     initial begin
-        for (i=0; i<32; i=i+1) ram[i] = 8'h00;
+        for (i = 0; i < 32; i = i + 1) begin
+            ram[i] = 8'h0F; // Initialize entirely to NES Black
+        end
     end
+    
+    // NES Hardware Quirk: Addresses ending in 00, 04, 08, 0C in the sprite palette 
+    // ($3F10-$3F1F) mirror directly to the background palette ($3F00-$3F0F).
+    wire [4:0] mapped_write_addr = (addr[1:0] == 2'b00) ? {1'b0, addr[3:0]} : addr;
+    wire [4:0] mapped_read_addr  = (addr[1:0] == 2'b00) ? {1'b0, addr[3:0]} : addr;
+    wire [4:0] mapped_dac_addr   = (dac_addr[1:0] == 2'b00) ? {1'b0, dac_addr[3:0]} : dac_addr;
+
     always @(posedge clk) begin
-        if (we) ram[addr] <= din;
+        if (we) ram[mapped_write_addr] <= din;
     end
-    assign dout = ram[addr];
-    assign dac_dout = ram[dac_addr];
+    
+    assign dout = ram[mapped_read_addr];
+    assign dac_dout = ram[mapped_dac_addr];
     assign dbg_palette_00 = ram[0];
+    
 endmodule
 
 module oam_ram (
@@ -344,4 +434,20 @@ module oam_ram (
         if (we) ram[addr] <= din;
         dout <= ram[addr];
     end
+endmodule
+
+module sec_oam_ram (
+    input  wire        clk,
+    input  wire [4:0]  addr,
+    input  wire [7:0]  din,
+    input  wire        we,
+    output reg  [7:0]  dout
+);
+    reg [7:0] ram [0:31];
+    always @(posedge clk) begin
+        if (we) ram[addr] <= din;
+        dout <= ram[addr];
+    end
+
+
 endmodule
