@@ -31,7 +31,11 @@ module ppu_core (
     
     input  wire [4:0]  dac_palette_addr,
     output wire [7:0]  dac_palette_data,
-    output wire [7:0]  dbg_palette_00
+    output wire [7:0]  dbg_palette_00,
+
+    // HARDWARE SURGERY: Diagnostic trap outputs
+    output wire [8:0]  trap_y_out,
+    output wire [8:0]  trap_x_out
 );
 
     wire [7:0] ppu_ctrl;
@@ -82,7 +86,10 @@ module ppu_core (
         
         .ppu_x              (ppu_x),
         .ppu_y              (ppu_y),
-        .ppu_visible        (ppu_visible)
+        .ppu_visible        (ppu_visible),
+        
+        .trap_y             (trap_y_out),
+        .trap_x             (trap_x_out)
     );
 
     vram_2k nametable_ram (
@@ -139,7 +146,10 @@ module ppu_registers (
     
     input  wire [8:0]  ppu_x,
     input  wire [8:0]  ppu_y,
-    input  wire        ppu_visible
+    input  wire        ppu_visible,
+
+    output reg  [8:0]  trap_y,
+    output reg  [8:0]  trap_x
 );
 
     reg [7:0] status_reg;
@@ -167,6 +177,8 @@ module ppu_registers (
             v             <= 15'd0;
             t             <= 15'd0;
             fine_x        <= 3'd0;
+            trap_y        <= 9'd0;
+            trap_x        <= 9'd0;
         end else begin
             if (clear_vblank_pulse) begin
                 status_reg[7] <= 1'b0;
@@ -176,6 +188,14 @@ module ppu_registers (
             if (sprite0_hit_pulse) status_reg[6] <= 1'b1;
 
             if (!cpu_write_n) begin
+                
+                // HARDWARE SURGERY: Latch the exact PPU coordinate if the CPU writes to 
+                // the scroll registers ($2005 or $2006) during the visible frame.
+                if ((cpu_addr == 3'd5 || cpu_addr == 3'd6) && ppu_y < 9'd240) begin
+                    trap_y <= ppu_y;
+                    trap_x <= ppu_x;
+                end
+
                 case (cpu_addr)
                     3'd0: begin 
                         ctrl_out <= cpu_data_in;
@@ -234,9 +254,6 @@ module ppu_registers (
             end
 
             if (rendering_enabled && ppu_ce) begin
-                
-                // 1. Horizontal Coarse Increment (Dot 328 to 256)
-                // Increments during visible area AND primer fetch window
                 if ((ppu_x < 9'd256 || ppu_x >= 9'd320) && ppu_x[2:0] == 3'd7) begin
                     if (v[4:0] == 31) begin
                         v[4:0] <= 0;
@@ -246,7 +263,6 @@ module ppu_registers (
                     end
                 end
 
-                // 2. Vertical Coarse Increment (Strictly at Dot 256)
                 if (ppu_x == 9'd256) begin
                     if (v[14:12] < 7) begin
                         v[14:12] <= v[14:12] + 1;
@@ -263,13 +279,11 @@ module ppu_registers (
                     end
                 end
 
-                // 3. Horizontal Reload (Strictly at Dot 257)
                 if (ppu_x == 9'd257) begin
                     v[4:0] <= t[4:0];
                     v[10]  <= t[10];
                 end
 
-                // 4. Vertical Reload (Pre-render line 261, Dots 280-304)
                 if (ppu_y == 9'd261 && ppu_x >= 9'd280 && ppu_x <= 9'd304) begin
                     v[9:5]   <= t[9:5];
                     v[11]    <= t[11];

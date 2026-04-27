@@ -1,40 +1,38 @@
-/*
- * File: nes_clock_generator.v
- * Description: Takes the 25.175 MHz master pixel clock and generates 
- * synchronous clock enable (CE) pulses for the PPU and CPU using 
- * 32-bit fractional phase accumulators.
- */
-
-module nes_clock_generator (
+module nes_clock_generator(
     input  wire clk_25mhz,
     input  wire reset,
-    
     output reg  cpu_ce,
     output reg  ppu_ce
 );
 
-    // 32-bit Phase Accumulators
-    reg [31:0] cpu_acc;
+    // 1. Generate the Base PPU Clock (5.369 MHz NTSC Target)
     reg [31:0] ppu_acc;
+    localparam PPU_INC = 32'd916029601; 
 
-    // Fractional increments calculated for 25.175 MHz base
-    localparam CPU_INC = 32'd305343257; // Generates ~1.789773 MHz
-    localparam PPU_INC = 32'd916029601; // Generates ~5.369318 MHz
-    
+    reg [1:0] cpu_div;
+
     always @(posedge clk_25mhz or posedge reset) begin
         if (reset) begin
-            cpu_acc <= 32'd0;
             ppu_acc <= 32'd0;
-            cpu_ce  <= 1'b0;
             ppu_ce  <= 1'b0;
+            cpu_ce  <= 1'b0;
+            cpu_div <= 2'd0;
         end else begin
-            // Add increments to accumulators
-            {cpu_ce, cpu_acc} <= {1'b0, cpu_acc} + {1'b0, CPU_INC};
+            // Fractional Accumulator for the PPU Phase
             {ppu_ce, ppu_acc} <= {1'b0, ppu_acc} + {1'b0, PPU_INC};
+
+            // 2. Hard-locked 1:3 CPU Divider
+            // The CPU clock enable ONLY fires strictly in phase with the PPU
+            cpu_ce <= 1'b0; 
             
-            // The carry-out bit of the addition naturally becomes the Clock Enable pulse.
-            // Since it only stays high for one 25MHz cycle when rolling over, 
-            // it perfectly steps the downstream modules.
+            if (ppu_ce) begin
+                if (cpu_div == 2'd2) begin
+                    cpu_div <= 2'd0;
+                    cpu_ce  <= 1'b1; // Fires exactly once every 3 PPU ticks
+                end else begin
+                    cpu_div <= cpu_div + 2'd1;
+                end
+            end
         end
     end
 

@@ -1,9 +1,3 @@
-/*
- * File: nes_top.v
- * Description: Top-level integration module for the NES architecture.
- * Implements the full internal memory map and cartridge ROM interface.
- */
-
 module nes_top (
     input  wire        CLOCK_50,
     input  wire [3:0]  KEY,
@@ -50,7 +44,7 @@ module nes_top (
 
     wire cpu_ce;
     wire ppu_ce;
-    
+
     nes_clock_generator clk_gen (
         .clk_25mhz (clk_25mhz),
         .reset     (sys_reset),
@@ -62,6 +56,7 @@ module nes_top (
     wire [7:0]  cpu_data_out;
     wire [7:0]  cpu_data_in;
     wire        cpu_write_en;
+
     wire [15:0] cpu_pc;          
     wire [5:0]  cpu_state;    
     wire        ppu_nmi;
@@ -79,23 +74,20 @@ module nes_top (
         .current_state (cpu_state)   
     );
 
-    // =========================================================================
-    // MEMORY MAP DECODING
-    // =========================================================================
-    wire work_ram_cs = (cpu_address < 16'h2000); 
+    wire work_ram_cs = (cpu_address < 16'h2000);
     wire ppu_cs      = (cpu_address >= 16'h2000 && cpu_address <= 16'h3FFF);
     wire prg_rom_cs  = (cpu_address >= 16'h8000);
     
     wire [7:0] work_ram_data_out; 
     wire [7:0] ppu_data_out;
     wire [7:0] prg_data_out;
-    
+
     assign cpu_data_in = ppu_cs      ? ppu_data_out :
                          prg_rom_cs  ? prg_data_out :
                          work_ram_cs ? work_ram_data_out : 8'h00;
 
-    // 1. CPU Work RAM (2KB)
     wire work_ram_we = cpu_write_en && work_ram_cs;
+
     work_ram cpu_ram (
         .clk  (clk_25mhz),
         .addr (cpu_address[10:0]),
@@ -104,14 +96,12 @@ module nes_top (
         .dout (work_ram_data_out)
     );
 
-    // 2. PRG-ROM (32KB Cartridge Program)
     prg_rom cart_prg (
         .clk  (clk_25mhz),
         .addr (cpu_address[14:0]),
         .dout (prg_data_out)
     );
 
-    // 3. CHR-ROM (8KB Cartridge Graphics)
     wire [13:0] chr_addr;
     wire [7:0]  chr_data_out;
     wire        chr_read_n;
@@ -122,9 +112,6 @@ module nes_top (
         .dout (chr_data_out)
     );
 
-    // =========================================================================
-    // VIDEO SUBSYSTEM
-    // =========================================================================
     reg cpu_we_last;
     always @(posedge clk_25mhz) begin
         if (sys_reset) cpu_we_last <= 1'b0;
@@ -147,18 +134,23 @@ module nes_top (
     wire [14:0] dbg_vram_addr;
     wire [7:0]  dbg_palette_00;
     wire [7:0]  dbg_nt_latch;
+    
+    wire [8:0] trap_y;
+    wire [8:0] trap_x;
 
     video_subsystem_top video_engine (
         .clk_25mhz      (clk_25mhz),
         .reset          (sys_reset),
+        .ppu_ce         (ppu_ce),
+        
         .cpu_addr       (cpu_address[2:0]),
         .cpu_data_in    (cpu_data_out),
         .cpu_data_out   (ppu_data_out),
         .cpu_read_n     (ppu_read_n),
         .cpu_write_n    (ppu_write_n),
         
-        .chr_addr       (chr_addr),      // Out to Cartridge
-        .chr_data_in    (chr_data_out),  // In from Cartridge
+        .chr_addr       (chr_addr),     
+        .chr_data_in    (chr_data_out), 
         .chr_read_n     (chr_read_n),    
         
         .vga_r          (VGA_R),
@@ -176,37 +168,36 @@ module nes_top (
         .dbg_palette_00 (dbg_palette_00),
         .dbg_nt_latch   (dbg_nt_latch),
         .nmi_out        (ppu_nmi),
+        
+        .trap_y_out     (trap_y),
+        .trap_x_out     (trap_x)
     );
 
     // =========================================================================
-    // TELEMETRY
+    // HARDWARE SURGERY: Dashboard
     // =========================================================================
-    assign LEDR[9] = pll_locked;
-    assign LEDR[8] = cpu_write_pulse; 
-    assign LEDR[7] = ppu_cs; 
-    assign LEDR[6] = 1'b0;
-    assign LEDR[5:0] = cpu_state; 
     
-    wire [15:0] hex_display_data = SW[9] ? {1'b0, dbg_vram_addr} : 
-                                   SW[8] ? {8'h00, dbg_nt_latch} : 
-                                   cpu_pc;
-                                   
-    wire [7:0]  hex_display_high = SW[9] ? dbg_palette_00 : 
-                                   SW[8] ? 8'h00 : 
-                                   8'h00;
+    // LEDR[7:0] will perfectly mirror the active PPUMASK. 
+    // If LEDR[1] is off, the CPU is explicitly asking for the left edge clip.
+    assign LEDR[7:0] = ppu_dbg_mask;
+    assign LEDR[8] = cpu_write_pulse; 
+    assign LEDR[9] = pll_locked;
 
-    hex_decoder hex5_inst (.hex_in(hex_display_high[7:4]), .segments(HEX5));
-    hex_decoder hex4_inst (.hex_in(hex_display_high[3:0]), .segments(HEX4));
-    hex_decoder hex3_inst (.hex_in(hex_display_data[15:12]), .segments(HEX3));
-    hex_decoder hex2_inst (.hex_in(hex_display_data[11:8]),  .segments(HEX2));
-    hex_decoder hex1_inst (.hex_in(hex_display_data[7:4]),   .segments(HEX1));
-    hex_decoder hex0_inst (.hex_in(hex_display_data[3:0]),   .segments(HEX0));
+    // Route the trapped coordinates to the HEX displays
+    wire [11:0] trap_y_hex = {3'b000, trap_y};
+    wire [11:0] trap_x_hex = {3'b000, trap_x};
+
+    hex_decoder hex5_inst (.hex_in(trap_y_hex[11:8]), .segments(HEX5)); // Y High
+    hex_decoder hex4_inst (.hex_in(trap_y_hex[7:4]),  .segments(HEX4)); // Y Mid
+    hex_decoder hex3_inst (.hex_in(trap_y_hex[3:0]),  .segments(HEX3)); // Y Low
+    
+    hex_decoder hex2_inst (.hex_in(trap_x_hex[11:8]), .segments(HEX2)); // X High
+    hex_decoder hex1_inst (.hex_in(trap_x_hex[7:4]),  .segments(HEX1)); // X Mid
+    hex_decoder hex0_inst (.hex_in(trap_x_hex[3:0]),  .segments(HEX0)); // X Low
 
 endmodule
 
-// =============================================================================
-// Sub-Module: Synchronous Button Debouncer
-// =============================================================================
+// ... Keep button_debouncer exactly as it was ...
 module button_debouncer (
     input  wire clk,
     input  wire button_in,

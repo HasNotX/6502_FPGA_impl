@@ -27,7 +27,11 @@ module video_subsystem_top (
     output wire [14:0] dbg_vram_addr,
     output wire [7:0]  dbg_palette_00,
     output wire [7:0]  dbg_nt_latch,
-    output wire        nmi_out
+    output wire        nmi_out,
+    
+    // HARDWARE SURGERY
+    output wire [8:0]  trap_y_out,
+    output wire [8:0]  trap_x_out
 );
 
     wire [7:0] nes_x, nes_y;
@@ -47,9 +51,6 @@ module video_subsystem_top (
     assign vga_sync_n = 1'b0;
     assign vga_clk    = clk_25mhz;
 
-    // =========================================================================
-    // NTSC Timing Domain
-    // =========================================================================
     wire [8:0] ppu_x;
     wire [8:0] ppu_y;
     wire ppu_visible;
@@ -79,7 +80,7 @@ module video_subsystem_top (
 
     wire vblank_pulse       = ppu_ce && (ppu_y == 9'd241) && (ppu_x == 9'd1);
     wire clear_vblank_pulse = ppu_ce && (ppu_y == 9'd261) && (ppu_x == 9'd1);
-    wire sprite0_hit_pulse  = ppu_ce && (ppu_y == 9'd30)  && (ppu_x == 9'd88) && is_rendering;
+    wire sprite0_hit_pulse  = ppu_ce && (ppu_y == 9'd30)  && (ppu_x == 9'd96) && is_rendering;
 
     wire [14:0] active_v_reg;
     wire [2:0]  fine_x_scroll;
@@ -97,8 +98,8 @@ module video_subsystem_top (
         .ppu_x           (ppu_x),
         .ppu_y           (ppu_y),
         .ppu_visible     (is_rendering), 
-        .ppu_ctrl_reg    (dbg_ctrl),     
-        .ppu_mask_reg    (dbg_mask),  
+        .ppu_ctrl_reg    (dbg_ctrl),       
+        .ppu_mask_reg    (dbg_mask),
         .active_v_reg    (active_v_reg),  
         .fine_x_scroll   (fine_x_scroll), 
         .bg_mem_addr     (bg_mem_addr),
@@ -106,22 +107,15 @@ module video_subsystem_top (
         .pixel_color_idx (pixel_color_idx)
     );
 
-    // =========================================================================
-    // Domain Bridge: Ping-Pong Line Buffer
-    // =========================================================================
     wire [3:0] buffered_color_idx;
 
     ping_pong_line_buffer scanline_buffer (
         .clk           (clk_25mhz),
-        
-        // PPU Write Domain
         .ppu_ce        (ppu_ce),
         .ppu_x         (ppu_x),
         .ppu_y         (ppu_y),
         .ppu_visible   (is_rendering),
         .ppu_color_idx (pixel_color_idx),
-        
-        // VGA Read Domain
         .vga_nes_x     (nes_x),
         .vga_color_idx (buffered_color_idx)
     );
@@ -161,7 +155,10 @@ module video_subsystem_top (
         
         .dac_palette_addr   (dac_palette_addr),
         .dac_palette_data   (nes_color_code),
-        .dbg_palette_00     (dbg_palette_00)
+        .dbg_palette_00     (dbg_palette_00),
+        
+        .trap_y_out         (trap_y_out),
+        .trap_x_out         (trap_x_out)
     );
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;
