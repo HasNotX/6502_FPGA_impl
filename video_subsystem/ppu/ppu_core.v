@@ -35,7 +35,6 @@ module ppu_core (
     output wire [8:0]  trap_y_out,
     output wire [8:0]  trap_x_out,
     
-    // Inter-module signals routed from bg_render
     input  wire [3:0]  bg_pixel_idx
 );
 
@@ -66,7 +65,8 @@ module ppu_core (
     wire [4:0] render_sec_oam_addr;
     wire [7:0] sec_oam_data_out;
     
-    wire [4:0] active_sec_oam_addr = (ppu_x >= 9'd257) ? render_sec_oam_addr : eval_sec_oam_addr;
+    // PATCHED: Hand over the bus at Dot 256 so the render primer fetch succeeds
+    wire [4:0] active_sec_oam_addr = (ppu_x >= 9'd256) ? render_sec_oam_addr : eval_sec_oam_addr;
 
     wire sprite_0_active;
     wire sprite_overflow;
@@ -138,7 +138,7 @@ module ppu_core (
         .ppu_ce             (ppu_ce),
         .vblank_pulse       (vblank_pulse), 
         .clear_vblank_pulse (clear_vblank_pulse),
-        .sprite0_hit_pulse  (sprite_0_hit_pulse), // Driven natively by render pipeline
+        .sprite0_hit_pulse  (sprite_0_hit_pulse), 
         
         .cpu_addr           (cpu_addr),
         .cpu_data_in        (cpu_data_in),
@@ -198,7 +198,6 @@ module ppu_core (
     );
 
 endmodule
-
 
 module ppu_registers (
     input  wire        clk,
@@ -448,6 +447,4 @@ module sec_oam_ram (
         if (we) ram[addr] <= din;
         dout <= ram[addr];
     end
-
-
 endmodule

@@ -1,9 +1,3 @@
-/*
- * File: ppu_sprite_render.v
- * Description: Cycle-accurate sprite rendering engine and multiplexer.
- * Handles Phase 3 CHR-ROM fetches and visible scanline pixel shifting.
- */
-
 module ppu_sprite_render (
     input  wire        clk,
     input  wire        reset,
@@ -13,20 +7,16 @@ module ppu_sprite_render (
     input  wire [8:0]  ppu_y,
     input  wire [7:0]  ppu_ctrl_reg,
     
-    // Interface to Secondary OAM
     output reg  [4:0]  sec_oam_addr,
     input  wire [7:0]  sec_oam_data,
     
-    // Interface to CHR-ROM Bus (Active Dots 257-320)
     output reg  [13:0] chr_addr,
     input  wire [7:0]  chr_data,
     
-    // Output Pixel and Collision Flags
     output wire [3:0]  sprite_pixel_idx,
     output wire        sprite_priority,
     output wire        sprite_0_hit_pulse,
     
-    // State from Evaluation Engine
     input  wire        sprite_0_active,
     input  wire [3:0]  bg_pixel_idx,
     input  wire        rendering_enabled
@@ -35,7 +25,6 @@ module ppu_sprite_render (
     wire [13:0] base_sprite_addr = {1'b0, ppu_ctrl_reg[3], 12'd0};
     wire sprite_height_16 = ppu_ctrl_reg[5];
 
-    // Bank of 8 Sprite Registers
     reg [7:0] sprite_x       [0:7];
     reg [7:0] sprite_attr    [0:7];
     reg [7:0] sprite_pat_lo  [0:7];
@@ -49,13 +38,11 @@ module ppu_sprite_render (
 
     wire even_dot = ~ppu_x[0];
 
-    // Procedural calculation registers
     reg [3:0] y_offset;
     reg [3:0] active_y;
 
-    // -------------------------------------------------------------------------
-    // Phase 3: Secondary OAM to CHR-ROM Fetch Pipeline (Dots 257-320)
-    // -------------------------------------------------------------------------
+    wire [8:0] full_y_offset = ppu_y - {1'b0, latched_y};
+
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             sec_oam_addr <= 5'd0;
@@ -67,41 +54,31 @@ module ppu_sprite_render (
             latched_x    <= 8'd0;
             y_offset     <= 4'd0;
             active_y     <= 4'd0;
-            
-            // Note: Array resetting is typically unrolled or omitted in FPGAs 
-            // if not strictly necessary, but we rely on the state machine to overwrite them.
         end else if (ppu_ce && rendering_enabled) begin
             
             if (ppu_x == 9'd256) begin
-                sec_oam_addr <= 5'd0;
+                sec_oam_addr <= 5'd0; 
                 fetch_index  <= 3'd0;
             end
             
             else if (ppu_x >= 9'd257 && ppu_x <= 9'd320) begin
                 case (ppu_x[2:0])
-                    3'd1: begin // Dot 1: Read Y
-                        sec_oam_addr <= {fetch_index, 2'd1};
+                    3'd1: begin 
                         latched_y    <= sec_oam_data;
+                        sec_oam_addr <= {fetch_index, 2'd1}; 
                     end
-                    3'd2: ; // Wait
-                    3'd3: begin // Dot 3: Read Tile
-                        sec_oam_addr <= {fetch_index, 2'd2};
+                    3'd2: begin 
                         latched_tile <= sec_oam_data;
+                        sec_oam_addr <= {fetch_index, 2'd2}; 
                     end
-                    3'd4: ; // Wait
-                    3'd5: begin // Dot 5: Read Attribute
-                        sec_oam_addr <= {fetch_index, 2'd3};
+                    3'd3: begin 
                         latched_attr <= sec_oam_data;
+                        sec_oam_addr <= {fetch_index, 2'd3}; 
                     end
-                    3'd6: ; // Wait
-                    3'd7: begin // Dot 7: Read X & Request CHR Lo
+                    3'd4: begin 
                         latched_x <= sec_oam_data;
                         
-                        // NEW: Request the Y coordinate for the NEXT sprite
-                        sec_oam_addr <= {fetch_index + 1'b1, 2'd0}; 
-                        
-                        // Calculate Vertical Flip and Address using blocking assignments
-                        y_offset = (ppu_y[3:0] - latched_y[3:0]);
+                        y_offset = full_y_offset[3:0];
                         active_y = latched_attr[7] ? (sprite_height_16 ? 4'd15 - y_offset : 4'd7 - y_offset) : y_offset;
                         
                         if (sprite_height_16) begin
@@ -110,41 +87,32 @@ module ppu_sprite_render (
                             chr_addr <= base_sprite_addr | ({6'd0, latched_tile} << 4) | {11'd0, active_y[2:0]};
                         end
                     end
-                    3'd0: begin // Dot 8: Latch CHR Lo & Request CHR Hi
+                    3'd5: begin 
+                    end
+                    3'd6: begin 
                         sprite_pat_lo[fetch_index] <= chr_data;
                         chr_addr <= chr_addr | 14'd8; 
+                    end
+                    3'd7: begin 
+                    end
+                    3'd0: begin 
+                        sprite_pat_hi[fetch_index] <= chr_data;
+                        sprite_x[fetch_index]      <= latched_x;
+                        sprite_attr[fetch_index]   <= latched_attr;
                         
-                        // Latch remaining attributes for this sprite
-                        sprite_x[fetch_index]    <= latched_x;
-                        sprite_attr[fetch_index] <= latched_attr;
+                        fetch_index  <= fetch_index + 1'b1;
                         
-                        // The CHR Hi byte will be latched on Dot 2 of the NEXT cycle 
-                        // (or Dot 258/322 for boundary alignment)
-                        fetch_index <= fetch_index + 1'b1;
+                        sec_oam_addr <= {fetch_index + 1'b1, 2'd0}; 
                     end
                 endcase
-                
-                // Latch CHR Hi slightly offset due to the 8-dot pipeline wrapping
-                if (ppu_x[2:0] == 3'd2 && ppu_x > 9'd258) begin
-                    sprite_pat_hi[fetch_index - 1'b1] <= chr_data;
-                end
-            end
-            
-            // Final CHR Hi latch for the 8th sprite
-            else if (ppu_x == 9'd322) begin
-                sprite_pat_hi[7] <= chr_data;
             end
         end
     end
 
-    // -------------------------------------------------------------------------
-    // Visible Render Pipeline (Dots 1-256)
-    // -------------------------------------------------------------------------
     reg [3:0] active_pixel;
     reg       active_priority;
     reg       is_sprite_0;
 
-    // Procedural calculation registers for the multiplexer
     reg [2:0] x_offset;
     reg [2:0] bit_sel;
     reg       p0;
@@ -157,10 +125,11 @@ module ppu_sprite_render (
         is_sprite_0     = 1'b0;
         
         for (i = 7; i >= 0; i = i - 1) begin
-            if (ppu_x >= sprite_x[i] && ppu_x < (sprite_x[i] + 8)) begin
+            // PATCHED: Pad sprite_x to 9 bits to prevent 8-bit overflow artifacts on the right edge
+            if (ppu_x >= {1'b0, sprite_x[i]} && ppu_x < ({1'b0, sprite_x[i]} + 9'd8)) begin
                 
                 x_offset = ppu_x[2:0] - sprite_x[i][2:0];
-                bit_sel  = sprite_attr[i][6] ? x_offset : ~x_offset; // Horizontal Flip
+                bit_sel  = sprite_attr[i][6] ? x_offset : ~x_offset; 
                 
                 p0 = sprite_pat_lo[i][bit_sel];
                 p1 = sprite_pat_hi[i][bit_sel];
@@ -177,7 +146,6 @@ module ppu_sprite_render (
     assign sprite_pixel_idx = active_pixel;
     assign sprite_priority  = active_priority;
 
-    // Sprite 0 Hit Logic
     wire bg_is_opaque = (bg_pixel_idx[1:0] != 2'b00);
     wire sp_is_opaque = (active_pixel[1:0] != 2'b00);
     
