@@ -1,6 +1,7 @@
 module video_subsystem_top (
     input  wire        clk_25mhz,
     input  wire        reset,
+    input  wire        ppu_ce,
 
     input  wire [2:0]  cpu_addr,
     input  wire [7:0]  cpu_data_in,
@@ -30,7 +31,7 @@ module video_subsystem_top (
 );
 
     wire [7:0] nes_x, nes_y;
-    wire nes_visible;
+    wire nes_visible_vga;
 
     nes_vga_core vga_core (
         .clk_25mhz   (clk_25mhz),
@@ -40,31 +41,51 @@ module video_subsystem_top (
         .vga_blank_n (vga_blank_n),
         .nes_x       (nes_x),
         .nes_y       (nes_y),
-        .nes_visible (nes_visible)
+        .nes_visible (nes_visible_vga)
     );
 
     assign vga_sync_n = 1'b0;
     assign vga_clk    = clk_25mhz;
 
-    wire [14:0] bg_mem_addr;
-    wire [7:0]  bg_mem_data;
-    wire [3:0]  pixel_color_idx;
+    // =========================================================================
+    // NTSC Timing Domain
+    // =========================================================================
+    wire [8:0] ppu_x;
+    wire [8:0] ppu_y;
+    wire ppu_visible;
+    wire ppu_hblank;
+    wire ppu_vblank;
 
-    wire is_rendering = nes_visible && dbg_mask[3];
-
-    reg last_nes_visible;
-    reg [7:0] last_nes_y;
+    reg last_vga_vsync;
     always @(posedge clk_25mhz) begin
-        last_nes_visible <= nes_visible;
-        last_nes_y       <= nes_y;
+        if (reset) last_vga_vsync <= 1'b1;
+        else       last_vga_vsync <= vga_vsync;
     end
+    wire frame_sync_reset = (last_vga_vsync == 1'b1 && vga_vsync == 1'b0);
 
-    wire vblank_pulse       = !nes_visible && last_nes_visible && (last_nes_y == 8'd239);
-    wire clear_vblank_pulse = nes_visible && !last_nes_visible && (nes_y == 8'd0);
-    wire sprite0_hit_pulse  = nes_visible && (nes_y == 8'd23) && (nes_x == 8'd88);
+    ppu_timing_generator timing_gen (
+        .clk              (clk_25mhz),
+        .reset            (reset),
+        .ppu_ce           (ppu_ce),
+        .frame_sync_reset (frame_sync_reset),
+        .ppu_x            (ppu_x),
+        .ppu_y            (ppu_y),
+        .visible          (ppu_visible),
+        .hblank           (ppu_hblank),
+        .vblank           (ppu_vblank)
+    );
+
+    wire is_rendering = ppu_visible && dbg_mask[3];
+
+    wire vblank_pulse       = ppu_ce && (ppu_y == 9'd241) && (ppu_x == 9'd1);
+    wire clear_vblank_pulse = ppu_ce && (ppu_y == 9'd261) && (ppu_x == 9'd1);
+    wire sprite0_hit_pulse  = ppu_ce && (ppu_y == 9'd23)  && (ppu_x == 9'd88) && is_rendering;
 
     wire [14:0] active_v_reg;
     wire [2:0]  fine_x_scroll;
+    wire [14:0] bg_mem_addr;
+    wire [7:0]  bg_mem_data;
+    wire [3:0]  pixel_color_idx;
 
     assign dbg_vram_addr = active_v_reg; 
     assign dbg_nt_latch  = 8'h00;        
@@ -72,9 +93,10 @@ module video_subsystem_top (
     ppu_bg_render bg_render (
         .clk             (clk_25mhz),
         .reset           (reset),
-        .nes_x           (nes_x),
-        .nes_y           (nes_y),
-        .nes_visible     (is_rendering), 
+        .ppu_ce          (ppu_ce),
+        .ppu_x           (ppu_x),
+        .ppu_y           (ppu_y),
+        .ppu_visible     (is_rendering), 
         .ppu_ctrl_reg    (dbg_ctrl),       
         .active_v_reg    (active_v_reg),  
         .fine_x_scroll   (fine_x_scroll), 
@@ -84,17 +106,17 @@ module video_subsystem_top (
     );
 
     // =========================================================================
-    // Domain Bridge: Ping-Pong Line Buffer (Stage 3 Integration)
+    // Domain Bridge: Ping-Pong Line Buffer
     // =========================================================================
     wire [3:0] buffered_color_idx;
 
     ping_pong_line_buffer scanline_buffer (
         .clk           (clk_25mhz),
         
-        // PPU Write Domain (Temporarily mocked with VGA timing for Stage 3)
-        .ppu_ce        (1'b1), // Safe to write the same value twice due to 2x scaling
-        .ppu_x         ({1'b0, nes_x}),
-        .ppu_y         ({1'b0, nes_y}),
+        // PPU Write Domain
+        .ppu_ce        (ppu_ce),
+        .ppu_x         (ppu_x),
+        .ppu_y         (ppu_y),
         .ppu_visible   (is_rendering),
         .ppu_color_idx (pixel_color_idx),
         
@@ -103,13 +125,13 @@ module video_subsystem_top (
         .vga_color_idx (buffered_color_idx)
     );
 
-    // Route the buffered color to the DAC instead of the raw rendering output
     wire [4:0] dac_palette_addr = (buffered_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, buffered_color_idx};
     wire [7:0] nes_color_code;
 
     ppu_core ppu_inst (
         .clk                (clk_25mhz), 
         .reset              (reset),
+        .ppu_ce             (ppu_ce),
         .vblank_pulse       (vblank_pulse),
         .clear_vblank_pulse (clear_vblank_pulse), 
         .sprite0_hit_pulse  (sprite0_hit_pulse),  
@@ -130,8 +152,9 @@ module video_subsystem_top (
         .active_v_reg       (active_v_reg),
         .fine_x_scroll      (fine_x_scroll),
         
-        .nes_x              (nes_x),
-        .nes_visible        (is_rendering),
+        .ppu_x              (ppu_x),
+        .ppu_y              (ppu_y),
+        .ppu_visible        (is_rendering),
         .bg_mem_addr        (bg_mem_addr),
         .bg_mem_data        (bg_mem_data),
         
@@ -151,8 +174,8 @@ module video_subsystem_top (
         .vga_b          (vga_b_10)
     );
 
-    assign vga_r = vga_blank_n && nes_visible ? vga_r_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hFF;
-    assign vga_g = vga_blank_n && nes_visible ? vga_g_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hC0;
-    assign vga_b = vga_blank_n && nes_visible ? vga_b_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hCB;
+    assign vga_r = vga_blank_n && nes_visible_vga ? vga_r_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hFF;
+    assign vga_g = vga_blank_n && nes_visible_vga ? vga_g_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hC0;
+    assign vga_b = vga_blank_n && nes_visible_vga ? vga_b_10[9:2] : nes_y[0] | nes_y[1] ? 8'h00 : 8'hCB;
 
 endmodule

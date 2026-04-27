@@ -1,9 +1,11 @@
 module ppu_core (
     input  wire        clk,           
     input  wire        reset,         
+    input  wire        ppu_ce,
     input  wire        vblank_pulse,  
     input  wire        clear_vblank_pulse, 
     input  wire        sprite0_hit_pulse,  
+   
     output wire        nmi_out,
 
     input  wire [2:0]  cpu_addr,
@@ -21,8 +23,9 @@ module ppu_core (
     output wire [14:0] active_v_reg,
     output wire [2:0]  fine_x_scroll,
 
-    input  wire [7:0]  nes_x,
-    input  wire        nes_visible,
+    input  wire [8:0]  ppu_x,
+    input  wire [8:0]  ppu_y,
+    input  wire        ppu_visible,
     input  wire [14:0] bg_mem_addr,
     output wire [7:0]  bg_mem_data,
     
@@ -34,8 +37,8 @@ module ppu_core (
     wire [7:0] ppu_ctrl;
     wire [7:0] ppu_mask;
     wire [7:0] oam_addr;
-    wire [14:0] vram_addr;        
-    
+    wire [14:0] vram_addr;
+
     assign dbg_ctrl = ppu_ctrl;
     assign dbg_mask = ppu_mask;
     assign active_v_reg = vram_addr;
@@ -44,15 +47,13 @@ module ppu_core (
     wire [7:0] palette_data_out;
     wire [7:0] oam_data_out;
 
-    // YOUR ORIGINAL FLAWLESS ARBITRATOR
-    // PPU gets bus only when drawing pixels. CPU gets it otherwise.
-    wire [14:0] target_addr = nes_visible ? bg_mem_addr : vram_addr;
-    wire target_we = nes_visible ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd7));
+    wire [14:0] target_addr = ppu_visible ? bg_mem_addr : vram_addr;
+    wire target_we = ppu_visible ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd7));
     
     wire [7:0] internal_mem_data_out = (target_addr >= 15'h3F00) ? palette_data_out :
                                        (target_addr >= 15'h2000) ? vram_data_out :
                                        chr_data_in;
-                                       
+
     assign bg_mem_data = internal_mem_data_out;
     assign chr_addr = target_addr[13:0];
     assign chr_read_n = ~(target_addr < 15'h2000);
@@ -60,6 +61,7 @@ module ppu_core (
     ppu_registers regs_inst (
         .clk                (clk),
         .reset              (reset),
+        .ppu_ce             (ppu_ce),
         .vblank_pulse       (vblank_pulse), 
         .clear_vblank_pulse (clear_vblank_pulse),
         .sprite0_hit_pulse  (sprite0_hit_pulse),
@@ -78,8 +80,9 @@ module ppu_core (
         .fine_x_out         (fine_x_scroll),
         .nmi_out            (nmi_out),
         
-        .nes_x              (nes_x),
-        .nes_visible        (nes_visible)
+        .ppu_x              (ppu_x),
+        .ppu_y              (ppu_y),
+        .ppu_visible        (ppu_visible)
     );
 
     vram_2k nametable_ram (
@@ -115,6 +118,7 @@ endmodule
 module ppu_registers (
     input  wire        clk,
     input  wire        reset,
+    input  wire        ppu_ce,
     input  wire        vblank_pulse,  
     input  wire        clear_vblank_pulse,
     input  wire        sprite0_hit_pulse, 
@@ -133,41 +137,24 @@ module ppu_registers (
     output wire [2:0]  fine_x_out,
     output wire        nmi_out,
     
-    input  wire [7:0]  nes_x,
-    input  wire        nes_visible
+    input  wire [8:0]  ppu_x,
+    input  wire [8:0]  ppu_y,
+    input  wire        ppu_visible
 );
+
     reg [7:0] status_reg;
     reg [7:0] read_buffer; 
 
     reg [14:0] v; 
     reg [14:0] t; 
-    reg [2:0]  fine_x; 
+    reg [2:0]  fine_x;
     reg        w; 
 
     assign nmi_out = status_reg[7] & ctrl_out[7];
-    assign vram_addr_out = v; 
+    assign vram_addr_out = v;
     assign fine_x_out = fine_x;
     
     wire rendering_enabled = mask_out[3] | mask_out[4];
-
-    // Simple Edge Detectors based entirely on your NES coordinates
-    reg last_nes_visible;
-    reg [7:0] last_nes_x;
-    always @(posedge clk) begin
-        last_nes_visible <= nes_visible;
-        last_nes_x <= nes_x;
-    end
-    
-    wire pixel_tick = (nes_x != last_nes_x) && nes_visible;
-    wire start_of_scanline = nes_visible && !last_nes_visible;
-    wire end_of_scanline   = !nes_visible && last_nes_visible;
-
-    // 2x VGA Parity Toggle: Ensures Y scrolls at NES resolution (240) not VGA (480)
-    reg vga_sweep_parity; 
-    always @(posedge clk) begin
-        if (clear_vblank_pulse) vga_sweep_parity <= 1'b0;
-        else if (end_of_scanline) vga_sweep_parity <= ~vga_sweep_parity;
-    end
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -194,9 +181,9 @@ module ppu_registers (
                         ctrl_out <= cpu_data_in;
                         t[11:10] <= cpu_data_in[1:0]; 
                     end
-                    3'd1: mask_out     <= cpu_data_in; 
+                    3'd1: mask_out     <= cpu_data_in;
                     3'd3: oam_addr_out <= cpu_data_in; 
-                    3'd4: oam_addr_out <= oam_addr_out + 1'b1; 
+                    3'd4: oam_addr_out <= oam_addr_out + 1'b1;
                     3'd5: begin 
                         if (!w) begin
                             t[4:0] <= cpu_data_in[7:3];
@@ -230,7 +217,7 @@ module ppu_registers (
                     3'd2: begin 
                         cpu_data_out  <= (vblank_pulse) ? {1'b1, status_reg[6:0]} : status_reg;
                         w             <= 1'b0;
-                        status_reg[7] <= 1'b0;            
+                        status_reg[7] <= 1'b0;
                     end
                     3'd7: begin 
                         if (v >= 15'h3F00) begin
@@ -246,11 +233,11 @@ module ppu_registers (
                 endcase
             end
 
-            // Loopy Hardware Updates - Exclusively run during active display
-            if (rendering_enabled) begin
+            if (rendering_enabled && ppu_ce) begin
                 
-                // Coarse X Increment
-                if (pixel_tick && nes_x[2:0] == 3'd7) begin
+                // 1. Horizontal Coarse Increment (Dot 328 to 256)
+                // Increments during visible area AND primer fetch window
+                if ((ppu_x < 9'd256 || ppu_x >= 9'd320) && ppu_x[2:0] == 3'd7) begin
                     if (v[4:0] == 31) begin
                         v[4:0] <= 0;
                         v[10]  <= ~v[10]; 
@@ -259,8 +246,8 @@ module ppu_registers (
                     end
                 end
 
-                // Y Increment (Only on 2nd VGA sweep)
-                if (end_of_scanline && vga_sweep_parity == 1'b1) begin
+                // 2. Vertical Coarse Increment (Strictly at Dot 256)
+                if (ppu_x == 9'd256) begin
                     if (v[14:12] < 7) begin
                         v[14:12] <= v[14:12] + 1;
                     end else begin
@@ -276,24 +263,24 @@ module ppu_registers (
                     end
                 end
 
-                // Horizontal Copy (Start of EVERY sweep to reset carriage)
-                if (start_of_scanline) begin
+                // 3. Horizontal Reload (Strictly at Dot 257)
+                if (ppu_x == 9'd257) begin
                     v[4:0] <= t[4:0];
                     v[10]  <= t[10];
                 end
-            end
-            
-            // Vertical Copy (Start of Frame - top left pixel)
-            if (clear_vblank_pulse && rendering_enabled) begin
-                v[9:5]   <= t[9:5];
-                v[11]    <= t[11];
-                v[14:12] <= t[14:12];
+
+                // 4. Vertical Reload (Pre-render line 261, Dots 280-304)
+                if (ppu_y == 9'd261 && ppu_x >= 9'd280 && ppu_x <= 9'd304) begin
+                    v[9:5]   <= t[9:5];
+                    v[11]    <= t[11];
+                    v[14:12] <= t[14:12];
+                end
             end
         end
     end
 endmodule
 
-// (Keep vram_2k, palette_ram, oam_ram below this line exactly as they are)
+
 module vram_2k (
     input  wire        clk,
     input  wire [10:0] addr,
