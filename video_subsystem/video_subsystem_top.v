@@ -29,7 +29,6 @@ module video_subsystem_top (
     output wire [7:0]  dbg_nt_latch,
     output wire        nmi_out,
     
-    // HARDWARE SURGERY
     output wire [8:0]  trap_y_out,
     output wire [8:0]  trap_x_out
 );
@@ -80,13 +79,12 @@ module video_subsystem_top (
 
     wire vblank_pulse       = ppu_ce && (ppu_y == 9'd241) && (ppu_x == 9'd1);
     wire clear_vblank_pulse = ppu_ce && (ppu_y == 9'd261) && (ppu_x == 9'd1);
-    wire sprite0_hit_pulse  = ppu_ce && (ppu_y == 9'd23)  && (ppu_x == 9'd96) && is_rendering;
 
     wire [14:0] active_v_reg;
     wire [2:0]  fine_x_scroll;
     wire [14:0] bg_mem_addr;
     wire [7:0]  bg_mem_data;
-    wire [3:0]  pixel_color_idx;
+    wire [3:0]  bg_pixel_idx;
 
     assign dbg_vram_addr = active_v_reg; 
     assign dbg_nt_latch  = 8'h00;        
@@ -104,24 +102,11 @@ module video_subsystem_top (
         .fine_x_scroll   (fine_x_scroll), 
         .bg_mem_addr     (bg_mem_addr),
         .bg_mem_data     (bg_mem_data),
-        .pixel_color_idx (pixel_color_idx)
+        .pixel_color_idx (bg_pixel_idx)
     );
 
-    wire [3:0] buffered_color_idx;
-
-    ping_pong_line_buffer scanline_buffer (
-        .clk           (clk_25mhz),
-        .ppu_ce        (ppu_ce),
-        .ppu_x         (ppu_x),
-        .ppu_y         (ppu_y),
-        .ppu_visible   (is_rendering),
-        .ppu_color_idx (pixel_color_idx),
-        .vga_nes_x     (nes_x),
-        .vga_color_idx (buffered_color_idx)
-    );
-
-    wire [4:0] dac_palette_addr = (buffered_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, buffered_color_idx};
-    wire [7:0] nes_color_code;
+    wire [3:0] sprite_pixel_idx;
+    wire       sprite_priority;
 
     ppu_core ppu_inst (
         .clk                (clk_25mhz), 
@@ -129,7 +114,6 @@ module video_subsystem_top (
         .ppu_ce             (ppu_ce),
         .vblank_pulse       (vblank_pulse),
         .clear_vblank_pulse (clear_vblank_pulse), 
-        .sprite0_hit_pulse  (sprite0_hit_pulse),  
         .nmi_out            (nmi_out),
         
         .cpu_addr           (cpu_addr),
@@ -158,8 +142,37 @@ module video_subsystem_top (
         .dbg_palette_00     (dbg_palette_00),
         
         .trap_y_out         (trap_y_out),
-        .trap_x_out         (trap_x_out)
+        .trap_x_out         (trap_x_out),
+        .bg_pixel_idx       (bg_pixel_idx)
     );
+
+    // =========================================================================
+    // Pixel Multiplexer (Background vs. Sprites)
+    // =========================================================================
+    wire bg_opaque = (bg_pixel_idx[1:0] != 2'b00);
+    wire sp_opaque = (sprite_pixel_idx[1:0] != 2'b00);
+    
+    wire [3:0] final_pixel_idx = 
+        (!sp_opaque && !bg_opaque) ? 4'h0 :
+        ( sp_opaque && !bg_opaque) ? sprite_pixel_idx :
+        (!sp_opaque &&  bg_opaque) ? bg_pixel_idx :
+        (sprite_priority == 1'b0)  ? sprite_pixel_idx : bg_pixel_idx;
+
+    wire [3:0] buffered_color_idx;
+
+    ping_pong_line_buffer scanline_buffer (
+        .clk           (clk_25mhz),
+        .ppu_ce        (ppu_ce),
+        .ppu_x         (ppu_x),
+        .ppu_y         (ppu_y),
+        .ppu_visible   (is_rendering),
+        .ppu_color_idx (final_pixel_idx),
+        .vga_nes_x     (nes_x),
+        .vga_color_idx (buffered_color_idx)
+    );
+
+    wire [4:0] dac_palette_addr = (buffered_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, buffered_color_idx};
+    wire [7:0] nes_color_code;
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;
 

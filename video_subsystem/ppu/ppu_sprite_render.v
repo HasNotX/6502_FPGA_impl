@@ -49,6 +49,10 @@ module ppu_sprite_render (
 
     wire even_dot = ~ppu_x[0];
 
+    // Procedural calculation registers
+    reg [3:0] y_offset;
+    reg [3:0] active_y;
+
     // -------------------------------------------------------------------------
     // Phase 3: Secondary OAM to CHR-ROM Fetch Pipeline (Dots 257-320)
     // -------------------------------------------------------------------------
@@ -61,6 +65,11 @@ module ppu_sprite_render (
             latched_tile <= 8'd0;
             latched_attr <= 8'd0;
             latched_x    <= 8'd0;
+            y_offset     <= 4'd0;
+            active_y     <= 4'd0;
+            
+            // Note: Array resetting is typically unrolled or omitted in FPGAs 
+            // if not strictly necessary, but we rely on the state machine to overwrite them.
         end else if (ppu_ce && rendering_enabled) begin
             
             if (ppu_x == 9'd256) begin
@@ -88,16 +97,14 @@ module ppu_sprite_render (
                     3'd7: begin // Dot 7: Read X & Request CHR Lo
                         latched_x <= sec_oam_data;
                         
-                        // Calculate Vertical Flip and Address
-                        begin : chr_addr_calc
-                            wire [3:0] y_offset = (ppu_y - latched_y);
-                            wire [3:0] active_y = latched_attr[7] ? (sprite_height_16 ? 4'd15 - y_offset : 4'd7 - y_offset) : y_offset;
-                            
-                            if (sprite_height_16) begin
-                                chr_addr <= {1'b0, latched_tile[0], latched_tile[7:1], active_y[3], 1'b0, active_y[2:0]};
-                            end else begin
-                                chr_addr <= base_sprite_addr | ({6'd0, latched_tile} << 4) | {11'd0, active_y[2:0]};
-                            end
+                        // Calculate Vertical Flip and Address using blocking assignments
+                        y_offset = (ppu_y[3:0] - latched_y[3:0]);
+                        active_y = latched_attr[7] ? (sprite_height_16 ? 4'd15 - y_offset : 4'd7 - y_offset) : y_offset;
+                        
+                        if (sprite_height_16) begin
+                            chr_addr <= {1'b0, latched_tile[0], latched_tile[7:1], active_y[3], 1'b0, active_y[2:0]};
+                        end else begin
+                            chr_addr <= base_sprite_addr | ({6'd0, latched_tile} << 4) | {11'd0, active_y[2:0]};
                         end
                     end
                     3'd0: begin // Dot 8: Latch CHR Lo & Request CHR Hi
@@ -134,6 +141,12 @@ module ppu_sprite_render (
     reg       active_priority;
     reg       is_sprite_0;
 
+    // Procedural calculation registers for the multiplexer
+    reg [2:0] x_offset;
+    reg [2:0] bit_sel;
+    reg       p0;
+    reg       p1;
+
     integer i;
     always @(*) begin
         active_pixel    = 4'd0;
@@ -142,18 +155,17 @@ module ppu_sprite_render (
         
         for (i = 7; i >= 0; i = i - 1) begin
             if (ppu_x >= sprite_x[i] && ppu_x < (sprite_x[i] + 8)) begin
-                begin : pixel_mux
-                    wire [2:0] x_offset = ppu_x - sprite_x[i];
-                    wire [2:0] bit_sel  = sprite_attr[i][6] ? x_offset : ~x_offset; // Horizontal Flip
-                    
-                    wire p0 = sprite_pat_lo[i][bit_sel];
-                    wire p1 = sprite_pat_hi[i][bit_sel];
-                    
-                    if (p0 | p1) begin
-                        active_pixel    = {sprite_attr[i][1:0], p1, p0};
-                        active_priority = sprite_attr[i][5];
-                        if (i == 0) is_sprite_0 = 1'b1;
-                    end
+                
+                x_offset = ppu_x[2:0] - sprite_x[i][2:0];
+                bit_sel  = sprite_attr[i][6] ? x_offset : ~x_offset; // Horizontal Flip
+                
+                p0 = sprite_pat_lo[i][bit_sel];
+                p1 = sprite_pat_hi[i][bit_sel];
+                
+                if (p0 | p1) begin
+                    active_pixel    = {sprite_attr[i][1:0], p1, p0};
+                    active_priority = sprite_attr[i][5];
+                    if (i == 0) is_sprite_0 = 1'b1;
                 end
             end
         end

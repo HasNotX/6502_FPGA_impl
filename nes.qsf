@@ -186,6 +186,8 @@ set_location_assignment PIN_AB21 -to HEX5[6]
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name VERILOG_FILE oam_dma.v
+set_global_assignment -name VERILOG_FILE video_subsystem/ppu/ppu_sprite_render.v
 set_global_assignment -name VERILOG_FILE video_subsystem/ppu/ppu_timing_generator.v
 set_global_assignment -name VERILOG_FILE video_subsystem/ping_pong_line_buffer.v
 set_global_assignment -name VERILOG_FILE memory/work_ram.v
