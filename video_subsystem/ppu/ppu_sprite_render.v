@@ -97,6 +97,9 @@ module ppu_sprite_render (
                     3'd7: begin // Dot 7: Read X & Request CHR Lo
                         latched_x <= sec_oam_data;
                         
+                        // NEW: Request the Y coordinate for the NEXT sprite
+                        sec_oam_addr <= {fetch_index + 1'b1, 2'd0}; 
+                        
                         // Calculate Vertical Flip and Address using blocking assignments
                         y_offset = (ppu_y[3:0] - latched_y[3:0]);
                         active_y = latched_attr[7] ? (sprite_height_16 ? 4'd15 - y_offset : 4'd7 - y_offset) : y_offset;

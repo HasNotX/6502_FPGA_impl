@@ -16,11 +16,11 @@ module ping_pong_line_buffer (
     input  wire [8:0]  ppu_x,
     input  wire [8:0]  ppu_y,
     input  wire        ppu_visible,
-    input  wire [3:0]  ppu_color_idx,
+    input  wire [4:0]  ppu_color_idx,
     
     // VGA Read Domain (Continuous 25.175 MHz)
     input  wire [7:0]  vga_nes_x,
-    output reg  [3:0]  vga_color_idx
+    output reg  [4:0]  vga_color_idx
 );
 
     // Two independent memory blocks for Ping-Pong operation

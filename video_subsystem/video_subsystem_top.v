@@ -152,13 +152,14 @@ module video_subsystem_top (
     wire bg_opaque = (bg_pixel_idx[1:0] != 2'b00);
     wire sp_opaque = (sprite_pixel_idx[1:0] != 2'b00);
     
-    wire [3:0] final_pixel_idx = 
-        (!sp_opaque && !bg_opaque) ? 4'h0 :
-        ( sp_opaque && !bg_opaque) ? sprite_pixel_idx :
-        (!sp_opaque &&  bg_opaque) ? bg_pixel_idx :
-        (sprite_priority == 1'b0)  ? sprite_pixel_idx : bg_pixel_idx;
+    // Inject the 5th bit: 1'b1 for sprites, 1'b0 for background
+    wire [4:0] final_pixel_idx = 
+        (!sp_opaque && !bg_opaque) ? 5'h00 :
+        ( sp_opaque && !bg_opaque) ? {1'b1, sprite_pixel_idx} :
+        (!sp_opaque &&  bg_opaque) ? {1'b0, bg_pixel_idx} :
+        (sprite_priority == 1'b0)  ? {1'b1, sprite_pixel_idx} : {1'b0, bg_pixel_idx};
 
-    wire [3:0] buffered_color_idx;
+    wire [4:0] buffered_color_idx;
 
     ping_pong_line_buffer scanline_buffer (
         .clk           (clk_25mhz),
@@ -171,7 +172,8 @@ module video_subsystem_top (
         .vga_color_idx (buffered_color_idx)
     );
 
-    wire [4:0] dac_palette_addr = (buffered_color_idx[1:0] == 2'b00) ? 5'h00 : {1'b0, buffered_color_idx};
+    // The buffer now holds the true 5-bit address. Strip the padding logic.
+    wire [4:0] dac_palette_addr = (buffered_color_idx[1:0] == 2'b00) ? 5'h00 : buffered_color_idx;
     wire [7:0] nes_color_code;
 
     wire [9:0] vga_r_10, vga_g_10, vga_b_10;
