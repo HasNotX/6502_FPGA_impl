@@ -50,8 +50,8 @@ module cpu_fsm (
         end
     end
 
+    // S_DECODE removed to eliminate architectural cycle dropping
     localparam S_FETCH             = 6'd0,
-               S_DECODE            = 6'd2,
                S_OPERAND_LO        = 6'd5,
                S_OPERAND_HI        = 6'd6,
                S_EXECUTE           = 6'd3,
@@ -139,6 +139,20 @@ module cpu_fsm (
         endcase
     endfunction
 
+    // Evaluates single byte (Implicit/Accumulator) opcodes to bypass operand fetch stages
+    function is_single_byte;
+        input [7:0] op;
+        begin
+            case (op)
+                8'h00, 8'h08, 8'h0A, 8'h18, 8'h28, 8'h2A, 8'h38, 8'h40, 
+                8'h48, 8'h4A, 8'h58, 8'h60, 8'h68, 8'h6A, 8'h78, 8'h88, 
+                8'h8A, 8'h98, 8'h9A, 8'hA8, 8'hAA, 8'hB8, 8'hBA, 8'hC8, 
+                8'hCA, 8'hD8, 8'hE8, 8'hEA, 8'hF8: is_single_byte = 1'b1;
+                default: is_single_byte = 1'b0;
+            endcase
+        end
+    endfunction
+
     always @(posedge clk) begin
         if (reset) begin
             state      <= S_RESET_VEC_LO;
@@ -170,12 +184,10 @@ module cpu_fsm (
                         nmi_active <= 1'b0;
                         inst_reg   <= data_in;
                         PC         <= PC + 16'd1;
-                        state      <= S_DECODE;
+                        state      <= is_single_byte(data_in) ? S_EXECUTE : S_OPERAND_LO;
                     end
                 end
                 
-                S_DECODE: state <= (extra_cycles_in > 0) ? S_OPERAND_LO : S_EXECUTE;
-
                 S_OPERAND_LO: begin
                     operand_lo <= data_in;
                     PC         <= PC + 16'd1;
