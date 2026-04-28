@@ -143,7 +143,11 @@ module video_subsystem_top (
         
         .trap_y_out         (trap_y_out),
         .trap_x_out         (trap_x_out),
-        .bg_pixel_idx       (bg_pixel_idx)
+        .bg_pixel_idx       (bg_pixel_idx),
+        
+        // NEW: Plug the cables into the local wires!
+        .sprite_pixel_idx_out (sprite_pixel_idx),
+        .sprite_priority_out  (sprite_priority)
     );
 
     // =========================================================================

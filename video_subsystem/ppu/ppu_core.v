@@ -35,7 +35,9 @@ module ppu_core (
     output wire [8:0]  trap_y_out,
     output wire [8:0]  trap_x_out,
     
-    input  wire [3:0]  bg_pixel_idx
+    input  wire [3:0]  bg_pixel_idx,
+    output wire [3:0]  sprite_pixel_idx_out,
+    output wire        sprite_priority_out
 );
 
     wire [7:0] ppu_ctrl;
@@ -88,8 +90,6 @@ module ppu_core (
     );
 
     wire [13:0] sprite_chr_addr;
-    wire [3:0]  sprite_pixel_idx;
-    wire        sprite_priority;
     wire        sprite_0_hit_pulse;
 
     ppu_sprite_render render_inst (
@@ -103,8 +103,8 @@ module ppu_core (
         .sec_oam_data       (sec_oam_data_out),
         .chr_addr           (sprite_chr_addr),
         .chr_data           (chr_data_in),
-        .sprite_pixel_idx   (sprite_pixel_idx),
-        .sprite_priority    (sprite_priority),
+        .sprite_pixel_idx   (sprite_pixel_idx_out),
+        .sprite_priority    (sprite_priority_out),
         .sprite_0_hit_pulse (sprite_0_hit_pulse),
         .sprite_0_active    (sprite_0_active),
         .bg_pixel_idx       (bg_pixel_idx),
