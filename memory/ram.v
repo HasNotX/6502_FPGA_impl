@@ -1,9 +1,9 @@
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////====
 // ram_fpga.v  —  Quartus / Intel FPGA BRAM wrapper
 //
 // This module infers a true single-port M10K (Cyclone) or MLAB BRAM block.
 // Contains hardcoded initialization to configure the PPU and draw a graphic.
-// =============================================================================
+////////////////////////////////////////////////////////////////////////////====
 
 `timescale 1ns/1ps
 

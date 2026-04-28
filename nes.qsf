@@ -114,9 +114,9 @@ set_location_assignment PIN_AK18 -to VGA_VS
 set_location_assignment PIN_AJ22 -to VGA_SYNC_N
 
 
-# ==============================================================================
+# /////////////////////////////////////////////////////////////////////////=====
 # LED Outputs
-# ==============================================================================
+# /////////////////////////////////////////////////////////////////////////=====
 set_location_assignment PIN_AA24 -to LEDR[0]
 set_location_assignment PIN_AB23 -to LEDR[1]
 set_location_assignment PIN_AC23 -to LEDR[2]
@@ -128,9 +128,9 @@ set_location_assignment PIN_AF24 -to LEDR[7]
 set_location_assignment PIN_AB22 -to LEDR[8]
 set_location_assignment PIN_AC22 -to LEDR[9]
 
-# ==============================================================================
+# /////////////////////////////////////////////////////////////////////////=====
 # 7-Segment Displays
-# ==============================================================================
+# /////////////////////////////////////////////////////////////////////////=====
 set_location_assignment PIN_W17 -to HEX0[0]
 set_location_assignment PIN_V18 -to HEX0[1]
 set_location_assignment PIN_AG17 -to HEX0[2]

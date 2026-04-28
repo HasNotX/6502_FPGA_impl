@@ -52,9 +52,9 @@ module ppu_core (
     wire rendering_enabled = ppu_mask[3] | ppu_mask[4];
     wire is_active_frame   = rendering_enabled && (ppu_y < 9'd240 || ppu_y == 9'd261);
 
-    // =========================================================================
+    ////////////////////////////////////////////////////////////////////////////
     // OAM Subsystem Arbitration
-    // =========================================================================
+    ////////////////////////////////////////////////////////////////////////////
     wire [7:0] eval_oam_addr;
     wire [7:0] active_oam_addr = is_active_frame ? eval_oam_addr : cpu_oam_addr;
     wire       active_oam_we   = is_active_frame ? 1'b0 : ((~cpu_write_n) && (cpu_addr == 3'd4));
@@ -111,9 +111,9 @@ module ppu_core (
         .rendering_enabled  (rendering_enabled)
     );
 
-    // =========================================================================
+    ////////////////////////////////////////////////////////////////////////////
     // Memory Bus Arbitration
-    // =========================================================================
+    ////////////////////////////////////////////////////////////////////////////
     wire is_sprite_chr_window = is_active_frame && (ppu_x >= 9'd257 && ppu_x <= 9'd320);
     
     wire [14:0] target_addr = is_sprite_chr_window ? {1'b0, sprite_chr_addr} :
