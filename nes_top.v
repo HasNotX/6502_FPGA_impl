@@ -175,23 +175,30 @@ module nes_top (
         if (sys_reset) ctrl_re_last <= 1'b0;
         else           ctrl_re_last <= ctrl_read_active;
     end
-    wire ctrl_read_pulse = ctrl_read_active && !ctrl_re_last;
+    
+    // PATCH: Trigger on the FALLING EDGE (!active && last) 
+    // This forces the shift register to wait until the CPU has safely latched the data.
+    wire ctrl_read_pulse = !ctrl_read_active && ctrl_re_last;
 
     // Convert active-low KEYs to active-high logic
     wire [3:0] keys_pressed = ~KEY[3:0]; 
     
-    // Mode Switch Muxing
-    // SW[0] == 0 (Action Mode): KEY0=A, KEY1=B, KEY2=Select, KEY3=Start
-    // SW[0] == 1 (D-Pad Mode) : KEY0=Right, KEY1=Left, KEY2=Down, KEY3=Up
+    // =========================================================================
+    // HYBRID CONTROLLER MAPPING
+    // =========================================================================
     wire [7:0] nes_button_state;
-    assign nes_button_state[0] = (SW[0] == 1'b0) ? keys_pressed[0] : 1'b0; // A
-    assign nes_button_state[1] = (SW[0] == 1'b0) ? keys_pressed[1] : 1'b0; // B
-    assign nes_button_state[2] = (SW[0] == 1'b0) ? keys_pressed[2] : 1'b0; // Select
-    assign nes_button_state[3] = (SW[0] == 1'b0) ? keys_pressed[3] : 1'b0; // Start
-    assign nes_button_state[4] = (SW[0] == 1'b1) ? keys_pressed[3] : 1'b0; // Up
-    assign nes_button_state[5] = (SW[0] == 1'b1) ? keys_pressed[2] : 1'b0; // Down
-    assign nes_button_state[6] = (SW[0] == 1'b1) ? keys_pressed[1] : 1'b0; // Left
-    assign nes_button_state[7] = (SW[0] == 1'b1) ? keys_pressed[0] : 1'b0; // Right
+    
+    // Core Gameplay (Momentary Push Buttons)
+    assign nes_button_state[0] = keys_pressed[0]; // A (Jump)
+    assign nes_button_state[1] = keys_pressed[1]; // B (Run)
+    assign nes_button_state[7] = keys_pressed[2]; // Right
+    assign nes_button_state[6] = keys_pressed[3]; // Left
+    
+    // Utility and State Actions (Toggle Switches)
+    assign nes_button_state[5] = SW[1];           // Down (Pipes)
+    assign nes_button_state[4] = SW[2];           // Up (Vines)
+    assign nes_button_state[3] = SW[4];           // Start (Pause)
+    assign nes_button_state[2] = SW[3];           // Select (Title Screen)
 
     nes_controller joypad1 (
         .clk              (clk_25mhz),
