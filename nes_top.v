@@ -31,16 +31,10 @@ module nes_top (
         .locked   (pll_locked)
     );
 
-    wire raw_reset_btn = ~KEY[3]; 
-    wire clean_reset_btn;
-    
-    button_debouncer btn_db_inst (
-        .clk        (clk_25mhz),
-        .button_in  (raw_reset_btn),
-        .button_out (clean_reset_btn)
-    );
-
-    wire sys_reset = (~pll_locked) | clean_reset_btn;
+    // =========================================================================
+    // SYSTEM RESET (Mapped strictly to SW[9])
+    // =========================================================================
+    wire sys_reset = (~pll_locked) | SW[9];
 
     wire raw_cpu_ce;
     wire ppu_ce;
@@ -52,11 +46,8 @@ module nes_top (
         .ppu_ce    (ppu_ce)
     );
 
-    // =========================================================================
-    // OAM DMA Controller & CPU Gating
-    // =========================================================================
     wire dma_active;
-    wire effective_cpu_ce = raw_cpu_ce && !dma_active; // Halt CPU when DMA takes over
+    wire effective_cpu_ce = raw_cpu_ce && !dma_active; 
 
     wire [15:0] cpu_address;
     wire [7:0]  cpu_data_out;
@@ -68,7 +59,6 @@ module nes_top (
     wire        dma_read_en;
     wire        dma_write_en;
     
-    // System Memory Bus Arbitration
     wire [15:0] sys_address  = dma_active ? dma_address  : cpu_address;
     wire [7:0]  sys_data_out = dma_active ? dma_data_out : cpu_data_out;
     wire        sys_write_en = dma_active ? dma_write_en : cpu_write_en;
@@ -95,7 +85,7 @@ module nes_top (
 
     MOS_6502_CPU cpu_inst (
         .clk_25mhz     (clk_25mhz),
-        .cpu_ce        (effective_cpu_ce), // Halts natively
+        .cpu_ce        (effective_cpu_ce), 
         .reset         (sys_reset), 
         .address       (cpu_address),
         .data_in       (cpu_data_in),
@@ -107,17 +97,20 @@ module nes_top (
     );
 
     // =========================================================================
-    // MEMORY MAP DECODING (Using the Arbitrated sys_* bus)
+    // MEMORY MAP DECODING & ARBITRATION
     // =========================================================================
     wire work_ram_cs = (sys_address < 16'h2000);
     wire ppu_cs      = (sys_address >= 16'h2000 && sys_address <= 16'h3FFF);
+    wire ctrl_cs     = (sys_address == 16'h4016);
     wire prg_rom_cs  = (sys_address >= 16'h8000);
     
     wire [7:0] work_ram_data_out; 
     wire [7:0] ppu_data_out;
     wire [7:0] prg_data_out;
+    wire [7:0] ctrl_data_out;
 
     assign cpu_data_in = ppu_cs      ? ppu_data_out :
+                         ctrl_cs     ? ctrl_data_out :
                          prg_rom_cs  ? prg_data_out :
                          work_ram_cs ? work_ram_data_out : 8'h00;
 
@@ -147,6 +140,7 @@ module nes_top (
         .dout (chr_data_out)
     );
 
+    // Edge detectors for clean single-cycle memory operations
     reg cpu_we_last;
     always @(posedge clk_25mhz) begin
         if (sys_reset) cpu_we_last <= 1'b0;
@@ -164,6 +158,51 @@ module nes_top (
     wire cpu_read_pulse = cpu_read_active && !cpu_re_last;
     wire ppu_read_n  = ~cpu_read_pulse;
     
+    // =========================================================================
+    // CONTROLLER LOGIC & I/O MAPPING
+    // =========================================================================
+    wire ctrl_write_active = sys_write_en && ctrl_cs;
+    reg  ctrl_we_last;
+    always @(posedge clk_25mhz) begin
+        if (sys_reset) ctrl_we_last <= 1'b0;
+        else           ctrl_we_last <= ctrl_write_active;
+    end
+    wire ctrl_write_pulse = ctrl_write_active && !ctrl_we_last;
+
+    wire ctrl_read_active = sys_read_en && ctrl_cs;
+    reg  ctrl_re_last;
+    always @(posedge clk_25mhz) begin
+        if (sys_reset) ctrl_re_last <= 1'b0;
+        else           ctrl_re_last <= ctrl_read_active;
+    end
+    wire ctrl_read_pulse = ctrl_read_active && !ctrl_re_last;
+
+    // Convert active-low KEYs to active-high logic
+    wire [3:0] keys_pressed = ~KEY[3:0]; 
+    
+    // Mode Switch Muxing
+    // SW[0] == 0 (Action Mode): KEY0=A, KEY1=B, KEY2=Select, KEY3=Start
+    // SW[0] == 1 (D-Pad Mode) : KEY0=Right, KEY1=Left, KEY2=Down, KEY3=Up
+    wire [7:0] nes_button_state;
+    assign nes_button_state[0] = (SW[0] == 1'b0) ? keys_pressed[0] : 1'b0; // A
+    assign nes_button_state[1] = (SW[0] == 1'b0) ? keys_pressed[1] : 1'b0; // B
+    assign nes_button_state[2] = (SW[0] == 1'b0) ? keys_pressed[2] : 1'b0; // Select
+    assign nes_button_state[3] = (SW[0] == 1'b0) ? keys_pressed[3] : 1'b0; // Start
+    assign nes_button_state[4] = (SW[0] == 1'b1) ? keys_pressed[3] : 1'b0; // Up
+    assign nes_button_state[5] = (SW[0] == 1'b1) ? keys_pressed[2] : 1'b0; // Down
+    assign nes_button_state[6] = (SW[0] == 1'b1) ? keys_pressed[1] : 1'b0; // Left
+    assign nes_button_state[7] = (SW[0] == 1'b1) ? keys_pressed[0] : 1'b0; // Right
+
+    nes_controller joypad1 (
+        .clk              (clk_25mhz),
+        .reset            (sys_reset),
+        .ctrl_write_pulse (ctrl_write_pulse),
+        .ctrl_read_pulse  (ctrl_read_pulse),
+        .cpu_data_in      (sys_data_out),
+        .cpu_data_out     (ctrl_data_out),
+        .button_state     (nes_button_state)
+    );
+
     wire [7:0]  ppu_dbg_ctrl;
     wire [7:0]  ppu_dbg_mask;
     wire [14:0] dbg_vram_addr;

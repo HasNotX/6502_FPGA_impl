@@ -41,7 +41,7 @@ module ppu_sprite_render (
     reg [3:0] y_offset;
     reg [3:0] active_y;
 
-    wire [8:0] full_y_offset = ppu_y - {1'b0, latched_y};
+    wire [8:0] full_y_offset = ppu_y - {1'b0, latched_y}; // Adjust for the 1-dot fetch delay
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -119,16 +119,19 @@ module ppu_sprite_render (
     reg       p1;
 
     integer i;
+    reg [8:0] adjusted_x; // NEW: Register to hold the aligned coordinate
     always @(*) begin
         active_pixel    = 4'd0;
         active_priority = 1'b0;
         is_sprite_0     = 1'b0;
         
         for (i = 7; i >= 0; i = i - 1) begin
-            // PATCHED: Pad sprite_x to 9 bits to prevent 8-bit overflow artifacts on the right edge
-            if (ppu_x >= {1'b0, sprite_x[i]} && ppu_x < ({1'b0, sprite_x[i]} + 9'd8)) begin
+            // PATCHED: Shift sprites 1 pixel to the right to perfectly align with the background delay
+            adjusted_x = {1'b0, sprite_x[i]} + 9'd1;
+            
+            if (ppu_x >= adjusted_x && ppu_x < (adjusted_x + 9'd8)) begin
                 
-                x_offset = ppu_x[2:0] - sprite_x[i][2:0];
+                x_offset = ppu_x[2:0] - adjusted_x[2:0];
                 bit_sel  = sprite_attr[i][6] ? x_offset : ~x_offset; 
                 
                 p0 = sprite_pat_lo[i][bit_sel];
