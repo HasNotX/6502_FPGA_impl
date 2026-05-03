@@ -3,6 +3,18 @@ module nes_top (
     input  wire [3:0]  KEY,
     input  wire [9:0]  SW,
     
+	 output wire        AUD_MCLK,
+    output wire        AUD_LRCK,
+    output wire        AUD_SCK,
+    output wire        AUD_SDIN,
+	 
+
+	 
+	 
+	 //I2C Config Pins ────────────
+    output wire        FPGA_I2C_SCLK,
+    inout  wire        FPGA_I2C_SDAT,
+	 
     output wire [9:0]  LEDR,
     output wire [6:0]  HEX0,
     output wire [6:0]  HEX1,
@@ -18,7 +30,14 @@ module nes_top (
     output wire        VGA_VS,
     output wire        VGA_BLANK_N,
     output wire        VGA_SYNC_N,
-    output wire        VGA_CLK
+    output wire        VGA_CLK,
+	 
+	// ── Controller Buttons ──────────────
+    input  wire        btn_a,      // GPIO[0] PIN_W15
+    input  wire        btn_b,      // GPIO[2] PIN_Y16
+    input  wire        btn_start,  // GPIO[4] PIN_AJ1
+    input  wire        btn_left,   // GPIO[6] PIN_AH2
+    input  wire        btn_right // GPIO[8] PIN_AH4
 );
 
     wire clk_25mhz;
@@ -89,6 +108,7 @@ module nes_top (
         .reset         (sys_reset), 
         .address       (cpu_address),
         .data_in       (cpu_data_in),
+		  .irq_in        (apu_irq),
         .nmi_in        (ppu_nmi),
         .data_out      (cpu_data_out),
         .write_en      (cpu_write_en),
@@ -96,24 +116,30 @@ module nes_top (
         .current_state (cpu_state)   
     );
 
-    ////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
     // MEMORY MAP DECODING & ARBITRATION
     ////////////////////////////////////////////////////////////////////////////
     wire work_ram_cs = (sys_address < 16'h2000);
     wire ppu_cs      = (sys_address >= 16'h2000 && sys_address <= 16'h3FFF);
+    
+    // UPDATED: Explicitly exclude $4016 so the controller can breathe!
+    wire apu_cs      = (sys_address >= 16'h4000 && sys_address <= 16'h4017) && (sys_address != 16'h4014) && (sys_address != 16'h4016); 
+    
     wire ctrl_cs     = (sys_address == 16'h4016);
     wire prg_rom_cs  = (sys_address >= 16'h8000);
     
     wire [7:0] work_ram_data_out; 
     wire [7:0] ppu_data_out;
+    wire [7:0] apu_data_out; 
     wire [7:0] prg_data_out;
     wire [7:0] ctrl_data_out;
 
     assign cpu_data_in = ppu_cs      ? ppu_data_out :
-                         ctrl_cs     ? ctrl_data_out :
+                         ctrl_cs     ? ctrl_data_out :    // MOVED: Check the controller BEFORE the APU
+                         apu_cs      ? apu_data_out : 
                          prg_rom_cs  ? prg_data_out :
                          work_ram_cs ? work_ram_data_out : 8'h00;
-
+								 
     wire work_ram_we = sys_write_en && work_ram_cs;
 
     work_ram cpu_ram (
@@ -188,18 +214,23 @@ module nes_top (
     ////////////////////////////////////////////////////////////////////////////
     wire [7:0] nes_button_state;
     
-    // Core Gameplay (Momentary Push Buttons)
-    assign nes_button_state[0] = keys_pressed[0]; // A (Jump)
-    assign nes_button_state[1] = keys_pressed[1]; // B (Run)
-    assign nes_button_state[7] = keys_pressed[2]; // Right
-    assign nes_button_state[6] = keys_pressed[3]; // Left
-    
-    // Utility and State Actions (Toggle Switches)
-    assign nes_button_state[5] = SW[1];           // Down (Pipes)
-    assign nes_button_state[4] = SW[2];           // Up (Vines)
-    assign nes_button_state[3] = SW[4];           // Start (Pause)
-    assign nes_button_state[2] = SW[3];           // Select (Title Screen)
+  wire db_a, db_b, db_start, db_left, db_right;
 
+    button_debouncer deb_a     (.clk(clk_25mhz), .button_in(btn_a),     .button_out(db_a));
+    button_debouncer deb_b     (.clk(clk_25mhz), .button_in(btn_b),     .button_out(db_b));
+    button_debouncer deb_start (.clk(clk_25mhz), .button_in(btn_start), .button_out(db_start));
+    button_debouncer deb_left  (.clk(clk_25mhz), .button_in(btn_left),  .button_out(db_left));
+    button_debouncer deb_right (.clk(clk_25mhz), .button_in(btn_right), .button_out(db_right));
+
+    assign nes_button_state[0] = db_a;            // A     (Jump)
+    assign nes_button_state[1] = db_b;            // B     (Run)
+    assign nes_button_state[7] = db_right;        // Right
+    assign nes_button_state[6] = db_left;         // Left
+    assign nes_button_state[5] = 1'b0;            // Down  (not needed)
+    assign nes_button_state[4] = 1'b0;            // Up    (not needed)
+    assign nes_button_state[3] = db_start;        // Start (Pause)
+    assign nes_button_state[2] = SW[3];           // Select (Title Screen)
+	 
     nes_controller joypad1 (
         .clk              (clk_25mhz),
         .reset            (sys_reset),
@@ -254,6 +285,69 @@ module nes_top (
         .trap_x_out     (trap_x)
     );
 
+	 wire [15:0] audio_sample;
+    wire apu_irq;
+    
+    wire apu_write_en = sys_write_en && apu_cs;
+    wire apu_read_en  = sys_read_en && apu_cs;
+
+    APU nes_apu (
+        .clk            (clk_25mhz),
+        .ce             (effective_cpu_ce),
+        .reset          (sys_reset),
+        
+        .ADDR           (sys_address[4:0]), 
+        .DIN            (sys_data_out),
+        .DOUT           (apu_data_out),
+        .MW             (apu_write_en),
+        .MR             (apu_read_en),
+        
+        .audio_channels (5'b11111),         
+        .Sample         (audio_sample),     // This feeds into your Driver!
+
+        // DMC DMA interface (Tied off for now until we build the arbiter)
+        .DmaReq         (),
+        .DmaAck         (1'b0),             
+        .DmaAddr        (),
+        .DmaData        (8'h00),            
+
+        .odd_or_even    (),
+        .IRQ            (apu_irq)           // This goes to the CPU!
+    );
+	 
+	// CPU-clock stage only — kills combinational glitches from lookup table
+reg [15:0] audio_sample_cpu;
+always @(posedge clk_25mhz) begin
+    if (effective_cpu_ce)
+        audio_sample_cpu <= audio_sample;
+end
+
+wire [15:0] audio_sample_signed = audio_sample_cpu - 16'h8000;
+
+SoundDriver audio_out (
+    .CLK         (clk_25mhz),
+    .write_data  (audio_sample_signed),
+    .write_left  (1'b1),
+    .write_right (1'b1),
+    .AUD_MCLK    (AUD_MCLK),
+    .AUD_LRCK    (AUD_LRCK),
+    .AUD_SCK     (AUD_SCK),
+    .AUD_SDIN    (AUD_SDIN)
+);
+
+
+	 
+	 
+	I2C_AV_Config audio_boot (
+        // Host Side
+        .iCLK         (CLOCK_50),
+        .iRST_N       (~sys_reset),     // IMPORTANT: Terasic uses active-low reset!
+        // I2C Side
+        .I2C_SCLK     (FPGA_I2C_SCLK),
+        .I2C_SDAT     (FPGA_I2C_SDAT)
+    );
+	 
+	 
     assign LEDR[7:0] = ppu_dbg_mask;
     assign LEDR[8]   = dma_active; 
     assign LEDR[9]   = pll_locked;

@@ -6,8 +6,10 @@ module MOS_6502_CPU (
     input  wire        clk_25mhz,   
     input  wire        cpu_ce,      
     input  wire        reset,       
-    input  wire        nmi_in,        // NEW: Hardware NMI Line
-    
+
+    input  wire        nmi_in,        // Hardware NMI Line
+    input  wire        irq_in,
+
     output wire [15:0] address,
     input  wire [7:0]  data_in,     
     output wire [7:0]  data_out,    
@@ -99,6 +101,7 @@ module MOS_6502_CPU (
         .addr_mode_in    (addr_mode),
         .PC              (PC), 
         .inst_reg        (inst_reg), 
+		  .irq_in          (irq_in),
         .accum           (accum), 
         .X               (X), 
         .Y               (Y),

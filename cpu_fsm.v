@@ -6,6 +6,7 @@ module cpu_fsm (
     input clk, reset,
     input cpu_ce,
     input nmi_in,
+	 input irq_in,
     input [7:0] data_in,
     input [1:0] extra_cycles_in,
     input [3:0] alu_op_in,
@@ -32,6 +33,7 @@ module cpu_fsm (
     ////////////////////////////////////////////////////////////////////////////
     reg nmi_pending;
     reg nmi_active;
+	 reg irq_active;
     assign nmi_active_out = nmi_active;
     
     reg last_nmi_in;
@@ -157,6 +159,7 @@ module cpu_fsm (
         if (reset) begin
             state      <= S_RESET_VEC_LO;
             nmi_active <= 1'b0;
+				irq_active <= 1'b0;
             PC         <= 16'hFFFC;
             accum      <= 8'h00;
             X          <= 8'h00;
@@ -177,11 +180,19 @@ module cpu_fsm (
                     write_en <= 1'b0;
                     if (nmi_pending) begin
                         nmi_active <= 1'b1;
+                        irq_active <= 1'b0;
+                        push_data  <= PC[15:8];
+                        write_en   <= 1'b1;
+                        state      <= S_BRK_PUSH_PCH;
+                    end else if (irq_in && !s_reg[2]) begin 
+                        nmi_active <= 1'b0;
+                        irq_active <= 1'b1;
                         push_data  <= PC[15:8];
                         write_en   <= 1'b1;
                         state      <= S_BRK_PUSH_PCH;
                     end else begin
                         nmi_active <= 1'b0;
+                        irq_active <= 1'b0;
                         inst_reg   <= data_in;
                         PC         <= PC + 16'd1;
                         state      <= is_single_byte(data_in) ? S_EXECUTE : S_OPERAND_LO;
@@ -378,7 +389,7 @@ module cpu_fsm (
                 S_BRK_PUSH_PCL: begin
                     write_en  <= 1'b1;
                     s_pointer <= s_pointer - 8'd1;
-                    push_data <= nmi_active ? ((s_reg | 8'h20) & 8'hEF) : (s_reg | 8'h30);
+                    push_data <= (nmi_active || irq_active) ? ((s_reg | 8'h20) & 8'hEF) : (s_reg | 8'h30);
                     state     <= S_BRK_PUSH_SR;
                 end
                 
