@@ -2,7 +2,7 @@
 
 ## Overview
 
-The NES-on-FPGA design is a hardware implementation of the original Nintendo Entertainment System, written in Verilog and targeting the Altera DE10-Lite board (Cyclone V FPGA). The system is organized into three main clock domains and five major subsystems.
+The NES-on-FPGA design is a hardware implementation of the original Nintendo Entertainment System, written in Verilog and targeting the Altera DE10-Standard board (Cyclone V FPGA). The system is organized into three main clock domains and five major subsystems.
 
 ## High-Level Block Diagram
 

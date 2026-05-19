@@ -1,6 +1,6 @@
-# NES on Altera DE10-Lite
+# NES on Altera DE10-Standard
 
-An FPGA implementation of the Nintendo Entertainment System (NES) in Verilog, targeting the Altera DE10-Lite development board (Cyclone V FPGA). This project implements a **full-cycle-accurate NES** including the MOS 6502 CPU, Ricoh 2C02 PPU, APU audio, and VGA output.
+An FPGA implementation of the Nintendo Entertainment System (NES) in Verilog, targeting the Altera DE10-Standard development board (Cyclone V FPGA). This project implements a **full-cycle-accurate NES** including the MOS 6502 CPU, Ricoh 2C02 PPU, APU audio, and VGA output.
 
 ## Features
 
@@ -15,8 +15,8 @@ An FPGA implementation of the Nintendo Entertainment System (NES) in Verilog, ta
 
 | Parameter | Value |
 |-----------|-------|
-| Board | Altera DE10-Lite |
-| FPGA | Cyclone V 5CSXFC6D6F31C6 |
+| Board | Altera DE10-Standard |
+| FPGA | Cyclone V 5CSXFC6D6F31C6N |
 | Input Clock | 50 MHz |
 | System Clock | 25.175 MHz (via PLL) |
 | CPU Speed | ~1.79 MHz |

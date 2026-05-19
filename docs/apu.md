@@ -2,7 +2,7 @@
 
 ## Overview
 
-The APU is derived from Ludvig Strigaeus's open-source FPGA NES implementation (GPL licensed). It implements all five NES audio channels and outputs via the WM8731 audio codec on the DE10-Lite board.
+The APU is derived from Ludvig Strigaeus's open-source FPGA NES implementation (GPL licensed). It implements all five NES audio channels and outputs via the WM8731 audio codec on the DE10-Standard board.
 
 ## Module Hierarchy
 

@@ -2,7 +2,7 @@
 
 ## Hardware Requirements
 
-- **FPGA Board**: Altera DE10-Lite (Cyclone V 5CSXFC6D6F31C6)
+- **FPGA Board**: Altera DE10-Standard (Cyclone V 5CSXFC6D6F31C6N)
 - **Cable**: USB-Blaster download cable (on-board)
 - **Display**: VGA monitor (640×480@60Hz)
 - **Audio**: 3.5mm audio output (optional, for sound)
@@ -49,7 +49,7 @@ quartus_sh --flow compile nes.qpf
 
 ### 4. Program the Board
 
-1. Connect the DE10-Lite via USB
+1. Connect the DE10-Standard via USB
 2. Tools → Programmer
 3. Select the USB-Blaster (auto-detected)
 4. Click **Start** to program
@@ -60,7 +60,7 @@ The FPGA will immediately begin executing the loaded ROM.
 
 The project file `nes.qsf` contains all pin assignments. Key connections:
 
-| Signal | DE10-Lite Pin | Direction |
+| Signal | DE10-Standard Pin | Direction |
 |--------|---------------|-----------|
 | CLOCK_50 | PIN_P11 | 50 MHz input |
 | KEY[0] | PIN_M21 | Push button (reset) |

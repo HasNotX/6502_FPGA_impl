@@ -8,6 +8,8 @@
 db/
 incremental_db/
 simulation/
+paper/
+nes_assignment_defaults.qdf
 *.rdb
 *.cdb
 *.qdb
@@ -142,3 +144,9 @@ $RECYCLE.BIN/
 
 simulation_telemetry.txt
 sprite_telemetry.txt
+
+# ------------------------------------------------------------
+# Presentation
+# ------------------------------------------------------------
+presentation/
+

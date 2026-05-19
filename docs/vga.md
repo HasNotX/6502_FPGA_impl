@@ -61,7 +61,7 @@ PPU writes to buffer B ─────────────────▶ VG
 
 ## NES Palette LUT (`nes_palette_lut.v`)
 
-A 64-entry lookup table converts NES 6-bit color codes (from the PPU palette RAM) to 30-bit RGB values (10 bits per channel for the DE10-Lite DAC).
+A 64-entry lookup table converts NES 6-bit color codes (from the PPU palette RAM) to 30-bit RGB values (10 bits per channel for the DE10-Standard ADV7123 triple video DAC).
 
 The NES color palette consists of 4 rows of 16 colors:
 - **Row 0 ($00-$0F)**: Dark colors
@@ -95,6 +95,6 @@ VGA Domain (25.175 MHz)
   │    Palette LUT (6-bit → 30-bit RGB)    │
   │              │                          │
   │              ▼                          │
-  │    VGA DAC (R/G/B each 8-bit)          │
+  │    VGA DAC (R/G/B each 10-bit)          │
   └─────────────────────────────────────────┘
 ```
