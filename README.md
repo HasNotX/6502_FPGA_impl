@@ -111,6 +111,11 @@ Detailed documentation is available in the `docs/` directory:
 | LEDR[9:0] | Status indicators |
 | HEX[5:0] | 7-segment debug displays |
 
+
+## Synthesis and Analysis
+
+You can find the synthesis and timing report here [Synthesis_Report](nes_synthesis_report.md) for more details.
+
 ## License
 
 The APU modules (`APU.v`, `SoundDriver.v`) are Copyright (c) 2012-2013 Ludvig Strigeus, GPL Licensed.  
