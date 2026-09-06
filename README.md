@@ -116,8 +116,22 @@ Detailed documentation is available in the `docs/` directory:
 
 You can find the synthesis and timing report here [Synthesis_Report](nes_synthesis_report.md) for more details.
 
+## Contribution Details:
+
+HasNotX: 
+
+1) Design and Analysis of the 6502-CPU.
+2) Integartion of the APU (Audio Processing Unit)
+
+Hassan:
+
+1) Design and Analysis of the PPU (Picture Processing Unit)
+2) Top-Level Module/Memory management.
+
+   
 ## License
 
 The APU modules (`APU.v`, `SoundDriver.v`) are Copyright (c) 2012-2013 Ludvig Strigeus, GPL Licensed.  
 The I2C controller is Copyright (c) 2012 Terasic Technologies Inc.  
 All other code is for educational purposes.
+
